@@ -16,24 +16,24 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-SOURCES += main.cpp \
-    RegExpLogLineParser.cpp \
-    RegExpsLogMessageParser.cpp \
-    LinePosition.cpp \
-    BaseLinePositionStorage.cpp \
-    FilesIndexer.cpp \
-    EventPattern.cpp \
-    LineMatcher.cpp
+SOURCES += src/main.cpp \
+    src/RegExpLogLineParser.cpp \
+    src/RegExpsLogMessageParser.cpp \
+    src/LinePosition.cpp \
+    src/BaseLinePositionStorage.cpp \
+    src/FilesIndexer.cpp \
+    src/EventPattern.cpp \
+    src/LineMatcher.cpp
 
 HEADERS += \
-    ILogLineParser.h \
-    LogLineInfo.h \
-    RegExpLogLineParser.h \
-    ILogMessageParser.h \
-    RegExpsLogMessageParser.h \
-    LinePosition.h \
-    ILinePositionStorage.h \
-    BaseLinePositionStorage.h \
-    FilesIndexer.h \
-    EventPattern.h \
-    LineMatcher.h
+    src/ILogLineParser.h \
+    src/LogLineInfo.h \
+    src/RegExpLogLineParser.h \
+    src/ILogMessageParser.h \
+    src/RegExpsLogMessageParser.h \
+    src/LinePosition.h \
+    src/ILinePositionStorage.h \
+    src/BaseLinePositionStorage.h \
+    src/FilesIndexer.h \
+    src/EventPattern.h \
+    src/LineMatcher.h
