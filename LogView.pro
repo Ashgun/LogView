@@ -36,4 +36,5 @@ HEADERS += \
     src/BaseLinePositionStorage.h \
     src/FilesIndexer.h \
     src/EventPattern.h \
-    src/LineMatcher.h
+    src/LineMatcher.h \
+    src/ILineSelector.h

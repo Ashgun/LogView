@@ -185,8 +185,8 @@ void ParsingTest03()
 
 } // namespace tests
 
-#include <RegExpLogLineParser.h>
-#include <RegExpsLogMessageParser.h>
+#include "RegExpLogLineParser.h"
+#include "RegExpsLogMessageParser.h"
 
 #include <memory>
 
@@ -220,15 +220,30 @@ void ILogLineParser_Test()
     qDebug() << messageParser->Parse(info.Message, valuesRegExps);
 }
 
-#include <FilesIndexer.h>
-#include <BaseLinePositionStorage.h>
+#include "FilesIndexer.h"
+#include "BaseLinePositionStorage.h"
+#include "ILineSelector.h"
+
+class LineSelector : public ILineSelector
+{
+public:
+    ~LineSelector() = default;
+
+    // ILineSelector interface
+public:
+    bool LineShouldBeSelected(const std::string& line) const override
+    {
+        return line.find("Logging started") != std::string::npos;
+    }
+};
 
 void FilesIndexer_Test()
 {
     BaseLinePositionStorage linePositionStorage;
 
     {
-        FilesIndexer indexer(linePositionStorage);
+        LineSelector lineSelector;
+        FilesIndexer indexer(linePositionStorage, lineSelector);
         indexer.AddFileIndexes("log1.log");
     }
 
