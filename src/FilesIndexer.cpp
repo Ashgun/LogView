@@ -2,6 +2,7 @@
 
 #include "ILinePositionStorage.h"
 #include "ILineSelector.h"
+#include "IPositionedLinesStorage.h"
 
 #include <QDataStream>
 #include <QFile>
@@ -18,9 +19,11 @@ inline bool IsEndOfLineSymbol(char const ch)
 
 } // namespace
 
-FilesIndexer::FilesIndexer(ILinePositionStorage& linePositionStorage, const ILineSelector& lineSelector) :
+FilesIndexer::FilesIndexer(ILinePositionStorage& linePositionStorage, IPositionedLinesStorage& linesStorage,
+                           const ILineSelector& lineSelector) :
     m_linePositionStorage(linePositionStorage),
     m_lineSelector(lineSelector),
+    m_linesStorage(linesStorage),
     m_fileIndex(0)
 {
 }
@@ -55,11 +58,13 @@ void FilesIndexer::AddFileIndexes(const QString& filename)
 
                     std::string const line(bufferData + previousEol, bufferData + currentEol);
 
+                    LinePosition const pos(static_cast<FileOffset>(bufferStartOffset + previousEol), m_fileIndex);
+                    m_linePositionStorage.AddPosition(pos);
+
                     if (m_lineSelector.LineShouldBeSelected(line))
                     {
-                        lineAdded =  true;
-                        LinePosition const pos(static_cast<FileOffset>(bufferStartOffset + previousEol), m_fileIndex);
-                        m_linePositionStorage.AddPosition(pos);
+                        m_linesStorage.AddLine(line, pos);
+                        lineAdded = true;
                     }
 
                     previousEol = i;

@@ -23,7 +23,8 @@ SOURCES += src/main.cpp \
     src/BaseLinePositionStorage.cpp \
     src/FilesIndexer.cpp \
     src/EventPattern.cpp \
-    src/LineMatcher.cpp
+    src/LineMatcher.cpp \
+    src/BasePositionedLinesStorage.cpp
 
 HEADERS += \
     src/ILogLineParser.h \
@@ -37,4 +38,6 @@ HEADERS += \
     src/FilesIndexer.h \
     src/EventPattern.h \
     src/LineMatcher.h \
-    src/ILineSelector.h
+    src/ILineSelector.h \
+    src/IPositionedLinesStorage.h \
+    src/BasePositionedLinesStorage.h

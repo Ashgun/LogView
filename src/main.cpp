@@ -222,6 +222,7 @@ void ILogLineParser_Test()
 
 #include "FilesIndexer.h"
 #include "BaseLinePositionStorage.h"
+#include "BasePositionedLinesStorage.h"
 #include "ILineSelector.h"
 
 class LineSelector : public ILineSelector
@@ -229,8 +230,6 @@ class LineSelector : public ILineSelector
 public:
     ~LineSelector() = default;
 
-    // ILineSelector interface
-public:
     bool LineShouldBeSelected(const std::string& line) const override
     {
         return line.find("Logging started") != std::string::npos;
@@ -240,10 +239,11 @@ public:
 void FilesIndexer_Test()
 {
     BaseLinePositionStorage linePositionStorage;
+    BasePositionedLinesStorage positionedLinesStorage;
 
     {
         LineSelector lineSelector;
-        FilesIndexer indexer(linePositionStorage, lineSelector);
+        FilesIndexer indexer(linePositionStorage, positionedLinesStorage, lineSelector);
         indexer.AddFileIndexes("log1.log");
     }
 
@@ -258,6 +258,14 @@ void FilesIndexer_Test()
         LinePosition pos = linePositionStorage[i];
 
         qDebug() << i << pos.Offset;
+    }
+
+    qDebug() << positionedLinesStorage.Size();
+    for (int i = 0; i < 3; ++i)
+    {
+        PositionedLine line = positionedLinesStorage[i];
+
+        qDebug() << i << line.second.Offset << line.first.c_str();
     }
 }
 
