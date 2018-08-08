@@ -220,21 +220,10 @@ void ILogLineParser_Test()
     qDebug() << messageParser->Parse(info.Message, valuesRegExps);
 }
 
-#include "FilesIndexer.h"
 #include "BaseLinePositionStorage.h"
 #include "BasePositionedLinesStorage.h"
-#include "ILineSelector.h"
-
-class LineSelector : public ILineSelector
-{
-public:
-    ~LineSelector() = default;
-
-    bool LineShouldBeSelected(const EventPattern::PatternString& line) const override
-    {
-        return line.indexOf("Logging started") > -1;
-    }
-};
+#include "Events.h"
+#include "FilesIndexer.h"
 
 void FilesIndexer_Test()
 {
@@ -242,7 +231,15 @@ void FilesIndexer_Test()
     BasePositionedLinesStorage positionedLinesStorage;
 
     {
-        LineSelector lineSelector;
+        EventsHierarchyMatcher lineSelector;
+        lineSelector.Events.AddEvent(
+            CreateExtendedEvent(
+                EventPattern::CreateStringPattern("Logging started"),
+                EventPattern::CreateStringPattern("Logging finished")));
+        lineSelector.Events.TopLevelNodes.back().AddSubEvent(
+            CreateSingleEvent(
+                EventPattern::CreateStringPattern("Kernel intialization completed")));
+
         FilesIndexer indexer(linePositionStorage, positionedLinesStorage, lineSelector);
         indexer.AddFileIndexes("log1.log");
     }
@@ -261,11 +258,11 @@ void FilesIndexer_Test()
     }
 
     qDebug() << positionedLinesStorage.Size();
-    for (int i = 0; i < 3; ++i)
+    for (std::size_t i = 0; i < positionedLinesStorage.Size(); ++i)
     {
         PositionedLine line = positionedLinesStorage[i];
 
-        qDebug() << i << line.second.Offset << line.first;
+        qDebug() << i << line.Position.Offset << line.LevelInHierarchy << line.Line;
     }
 }
 

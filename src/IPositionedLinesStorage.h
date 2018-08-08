@@ -5,14 +5,19 @@
 
 #include <utility>
 
-using PositionedLine = std::pair<EventPattern::PatternString const, LinePosition const>;
+struct PositionedLine
+{
+    EventPattern::PatternString const Line;
+    LinePosition const Position;
+    int const LevelInHierarchy;
+};
 
 class IPositionedLinesStorage
 {
 public:
-    virtual void AddLine(EventPattern::PatternString const& line, LinePosition const& position)
+    virtual void AddLine(EventPattern::PatternString const& line, LinePosition const& position, int const hierarchyLevel)
     {
-        AddLine(PositionedLine(line, position));
+        AddLine(PositionedLine({line, position, hierarchyLevel}));
     }
     virtual void AddLine(PositionedLine const& positionedLine) = 0;
     virtual std::size_t Size() const = 0;

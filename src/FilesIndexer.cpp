@@ -1,7 +1,7 @@
 #include "FilesIndexer.h"
 
+#include "Events.h"
 #include "ILinePositionStorage.h"
-#include "ILineSelector.h"
 #include "IPositionedLinesStorage.h"
 
 #include <QDataStream>
@@ -20,7 +20,7 @@ inline bool IsEndOfLineSymbol(char const ch)
 } // namespace
 
 FilesIndexer::FilesIndexer(ILinePositionStorage& linePositionStorage, IPositionedLinesStorage& linesStorage,
-                           const ILineSelector& lineSelector) :
+                           const EventsHierarchyMatcher& lineSelector) :
     m_linePositionStorage(linePositionStorage),
     m_lineSelector(lineSelector),
     m_linesStorage(linesStorage),
@@ -63,9 +63,10 @@ void FilesIndexer::AddFileIndexes(const QString& filename)
                     LinePosition const pos(static_cast<FileOffset>(bufferStartOffset + previousEol), m_fileIndex);
                     m_linePositionStorage.AddPosition(pos);
 
-                    if (m_lineSelector.LineShouldBeSelected(line))
+                    int const hierarchyLevel = m_lineSelector.GetLevelInHierarchy(line);
+                    if (hierarchyLevel >= 0)
                     {
-                        m_linesStorage.AddLine(line, pos);
+                        m_linesStorage.AddLine(line, pos, hierarchyLevel);
                         lineAdded = true;
                     }
 

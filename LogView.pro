@@ -2,7 +2,8 @@ TARGET = LogView
 
 QT -= gui
 
-CONFIG += c++17 console
+CONFIG += c++14
+CONFIG += console
 CONFIG -= app_bundle
 
 # The following define makes your compiler emit warnings if you use
@@ -24,7 +25,8 @@ SOURCES += src/main.cpp \
     src/FilesIndexer.cpp \
     src/EventPattern.cpp \
     src/LineMatcher.cpp \
-    src/BasePositionedLinesStorage.cpp
+    src/BasePositionedLinesStorage.cpp \
+    src/Events.cpp
 
 HEADERS += \
     src/ILogLineParser.h \
@@ -40,4 +42,5 @@ HEADERS += \
     src/LineMatcher.h \
     src/ILineSelector.h \
     src/IPositionedLinesStorage.h \
-    src/BasePositionedLinesStorage.h
+    src/BasePositionedLinesStorage.h \
+    src/Events.h
