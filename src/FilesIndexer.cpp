@@ -20,7 +20,7 @@ inline bool IsEndOfLineSymbol(char const ch)
 } // namespace
 
 FilesIndexer::FilesIndexer(ILinePositionStorage& linePositionStorage, IPositionedLinesStorage& linesStorage,
-                           const EventsHierarchyMatcher& lineSelector) :
+                           const EventPatternsHierarchyMatcher& lineSelector) :
     m_linePositionStorage(linePositionStorage),
     m_lineSelector(lineSelector),
     m_linesStorage(linesStorage),

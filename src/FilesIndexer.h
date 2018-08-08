@@ -6,7 +6,7 @@
 #include <QString>
 #include <QStringList>
 
-class EventsHierarchyMatcher;
+class EventPatternsHierarchyMatcher;
 class ILinePositionStorage;
 class IPositionedLinesStorage;
 
@@ -14,14 +14,14 @@ class FilesIndexer
 {
 public:
     FilesIndexer(ILinePositionStorage& linePositionStorage, IPositionedLinesStorage& linesStorage,
-                 EventsHierarchyMatcher const& lineSelector);
+                 EventPatternsHierarchyMatcher const& lineSelector);
 
     void AddFileIndexes(QString const& filename);
     void AddFilesIndexes(QStringList const& filenames);
 
 private:
     ILinePositionStorage& m_linePositionStorage;
-    EventsHierarchyMatcher const& m_lineSelector;
+    EventPatternsHierarchyMatcher const& m_lineSelector;
     IPositionedLinesStorage& m_linesStorage;
     FileIndex m_fileIndex;
 };

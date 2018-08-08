@@ -6,39 +6,39 @@
 #include <memory>
 #include <vector>
 
-class IMatchableEvent
+class IMatchableEventPattern
 {
 public:
     virtual bool IsPatternMatched(QString const& line) const = 0;
-    virtual std::unique_ptr<IMatchableEvent> Clone() const = 0;
-    virtual ~IMatchableEvent() = default;
+    virtual std::unique_ptr<IMatchableEventPattern> Clone() const = 0;
+    virtual ~IMatchableEventPattern() = default;
 
 protected:
     LineMatcher m_lineMatcher;
 };
 
-using IMatchableEventPtr = std::unique_ptr<IMatchableEvent>;
+using IMatchableEventPatternPtr = std::unique_ptr<IMatchableEventPattern>;
 
-class SingleEvent : public IMatchableEvent
+class SingleEventPattern : public IMatchableEventPattern
 {
 public:
-    explicit SingleEvent(EventPattern const& pattern);
-    SingleEvent(EventPattern::PatternType const& patternType, EventPattern::PatternString const& patternString);
+    explicit SingleEventPattern(EventPattern const& pattern);
+    SingleEventPattern(EventPattern::PatternType const& patternType, EventPattern::PatternString const& patternString);
     bool IsPatternMatched(const QString& line) const override;
-    std::unique_ptr<IMatchableEvent> Clone() const override;
+    std::unique_ptr<IMatchableEventPattern> Clone() const override;
 
 public:
     EventPattern const Pattern;
 };
 
-class ExtendedEvent : public IMatchableEvent
+class ExtendedEventPattern : public IMatchableEventPattern
 {
 public:
-    ExtendedEvent(EventPattern const& startPattern, EventPattern const& endPattern);
-    ExtendedEvent(EventPattern const& startPattern, EventPattern const& endPattern,
+    ExtendedEventPattern(EventPattern const& startPattern, EventPattern const& endPattern);
+    ExtendedEventPattern(EventPattern const& startPattern, EventPattern const& endPattern,
         EventPattern const& altEndPattern);
     bool IsPatternMatched(const QString& line) const override;
-    std::unique_ptr<IMatchableEvent> Clone() const override;
+    std::unique_ptr<IMatchableEventPattern> Clone() const override;
 
 public:
     EventPattern const StartPattern;
@@ -46,44 +46,44 @@ public:
     EventPattern const AltEndPattern;
 };
 
-IMatchableEventPtr CreateSingleEvent(EventPattern const& pattern);
-IMatchableEventPtr CreateExtendedEvent(EventPattern const& startPattern, EventPattern const& endPattern);
-IMatchableEventPtr CreateExtendedEvent(EventPattern const& startPattern, EventPattern const& endPattern,
+IMatchableEventPatternPtr CreateSingleEvent(EventPattern const& pattern);
+IMatchableEventPatternPtr CreateExtendedEvent(EventPattern const& startPattern, EventPattern const& endPattern);
+IMatchableEventPatternPtr CreateExtendedEvent(EventPattern const& startPattern, EventPattern const& endPattern,
     EventPattern const& altEndPattern);
 
-class Events
+class EventPatterns
 {
 public:
-    Events();
+    EventPatterns();
 
-    void push_back(SingleEvent const& event);
-    void push_back(ExtendedEvent const& event);
+    void push_back(SingleEventPattern const& event);
+    void push_back(ExtendedEventPattern const& event);
     std::size_t size() const;
-    IMatchableEvent const& operator[](std::size_t const index) const;
+    IMatchableEventPattern const& operator[](std::size_t const index) const;
 
 private:
-    std::vector<IMatchableEventPtr> m_events;
+    std::vector<IMatchableEventPatternPtr> m_events;
 };
 
-struct EventsHierarchyNode
+struct EventPatternsHierarchyNode
 {
-    IMatchableEventPtr Event;
-    std::vector<EventsHierarchyNode> SubEvents;
+    IMatchableEventPatternPtr Event;
+    std::vector<EventPatternsHierarchyNode> SubEvents;
 
-    void AddSubEvent(IMatchableEventPtr event);
+    void AddSubEventPattern(IMatchableEventPatternPtr event);
 };
 
-struct EventsHierarchy
+struct EventPatternsHierarchy
 {
-    std::vector<EventsHierarchyNode> TopLevelNodes;
+    std::vector<EventPatternsHierarchyNode> TopLevelNodes;
 
-    void AddEvent(IMatchableEventPtr event);
+    void AddEventPattern(IMatchableEventPatternPtr event);
 };
 
-class EventsHierarchyMatcher
+class EventPatternsHierarchyMatcher
 {
 public:
-    EventsHierarchy Events;
+    EventPatternsHierarchy EventPatterns;
 
 public:
     bool IsAnyEventMatched(QString const& line) const;

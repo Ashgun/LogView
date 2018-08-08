@@ -231,12 +231,12 @@ void FilesIndexer_Test()
     BasePositionedLinesStorage positionedLinesStorage;
 
     {
-        EventsHierarchyMatcher lineSelector;
-        lineSelector.Events.AddEvent(
+        EventPatternsHierarchyMatcher lineSelector;
+        lineSelector.EventPatterns.AddEventPattern(
             CreateExtendedEvent(
                 EventPattern::CreateStringPattern("Logging started"),
                 EventPattern::CreateStringPattern("Logging finished")));
-        lineSelector.Events.TopLevelNodes.back().AddSubEvent(
+        lineSelector.EventPatterns.TopLevelNodes.back().AddSubEventPattern(
             CreateSingleEvent(
                 EventPattern::CreateStringPattern("Kernel intialization completed")));
 
