@@ -56,7 +56,9 @@ void FilesIndexer::AddFileIndexes(const QString& filename)
                     ++i;
                     while (IsEndOfLineSymbol(bufferData[i]) && i < readBytesCount) { ++i; }
 
-                    std::string const line(bufferData + previousEol, bufferData + currentEol);
+                    EventPattern::PatternString const line =
+                            EventPattern::PatternString::fromStdString(
+                                std::string(bufferData + previousEol, bufferData + currentEol));
 
                     LinePosition const pos(static_cast<FileOffset>(bufferStartOffset + previousEol), m_fileIndex);
                     m_linePositionStorage.AddPosition(pos);

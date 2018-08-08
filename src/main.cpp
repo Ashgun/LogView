@@ -230,9 +230,9 @@ class LineSelector : public ILineSelector
 public:
     ~LineSelector() = default;
 
-    bool LineShouldBeSelected(const std::string& line) const override
+    bool LineShouldBeSelected(const EventPattern::PatternString& line) const override
     {
-        return line.find("Logging started") != std::string::npos;
+        return line.indexOf("Logging started") > -1;
     }
 };
 
@@ -265,7 +265,7 @@ void FilesIndexer_Test()
     {
         PositionedLine line = positionedLinesStorage[i];
 
-        qDebug() << i << line.second.Offset << line.first.c_str();
+        qDebug() << i << line.second.Offset << line.first;
     }
 }
 

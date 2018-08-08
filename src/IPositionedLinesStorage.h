@@ -1,15 +1,16 @@
 #pragma once
 
+#include "EventPattern.h"
 #include "LinePosition.h"
 
 #include <utility>
 
-using PositionedLine = std::pair<std::string const, LinePosition const>;
+using PositionedLine = std::pair<EventPattern::PatternString const, LinePosition const>;
 
 class IPositionedLinesStorage
 {
 public:
-    virtual void AddLine(std::string const& line, LinePosition const& position)
+    virtual void AddLine(EventPattern::PatternString const& line, LinePosition const& position)
     {
         AddLine(PositionedLine(line, position));
     }
