@@ -26,7 +26,8 @@ SOURCES += src/main.cpp \
     src/EventPattern.cpp \
     src/LineMatcher.cpp \
     src/BasePositionedLinesStorage.cpp \
-    src/Events.cpp
+    src/Events.cpp \
+    src/PositionedLine.cpp
 
 HEADERS += \
     src/ILogLineParser.h \
@@ -43,4 +44,5 @@ HEADERS += \
     src/ILineSelector.h \
     src/IPositionedLinesStorage.h \
     src/BasePositionedLinesStorage.h \
-    src/Events.h
+    src/Events.h \
+    src/PositionedLine.h

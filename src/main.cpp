@@ -224,6 +224,32 @@ void ILogLineParser_Test()
 #include "BasePositionedLinesStorage.h"
 #include "Events.h"
 #include "FilesIndexer.h"
+#include "ILogLineParser.h"
+
+#include <stdexcept>
+#include <vector>
+
+using IndexedLogLineInfo = std::pair<std::size_t, LogLineInfo>;
+using SplittedIndexes = std::vector<IndexedLogLineInfo>;
+using SplittedIndexesMap = std::map<QString, SplittedIndexes>;
+SplittedIndexesMap SplitLinesByHeaderField(IPositionedLinesStorage const& source,
+    QString const& headerField, ILogLineParser const& logLineParser)
+{
+    if (headerField.isEmpty())
+    {
+        throw std::invalid_argument("Header field for splitting should be not empty");
+    }
+
+    SplittedIndexesMap result;
+    for (std::size_t i = 0; i < source.Size(); ++i)
+    {
+        LogLineInfo const info = logLineParser.Parse(source[i].Line);
+        QString const orderingField = info.HeaderItems[headerField];
+        result[orderingField].push_back(IndexedLogLineInfo(i, info));
+    }
+
+    return result;
+}
 
 void FilesIndexer_Test()
 {
@@ -260,9 +286,23 @@ void FilesIndexer_Test()
     qDebug() << positionedLinesStorage.Size();
     for (std::size_t i = 0; i < positionedLinesStorage.Size(); ++i)
     {
-        PositionedLine line = positionedLinesStorage[i];
+        PositionedLine const& line = positionedLinesStorage[i];
 
         qDebug() << i << line.Position.Offset << line.LevelInHierarchy << line.Line;
+    }
+
+    QString groupRegExp("");
+    QVector<QPair<QString, QString>> headerRegExps;
+    headerRegExps.push_back(QPair<QString, QString>("DateTime", "\\[([0-9_\\./\\-\\s:]+)\\]\\s*"));
+    headerRegExps.push_back(QPair<QString, QString>("LogLevel", "\\[([TILDWEF]){1,1}\\]\\s*"));
+    headerRegExps.push_back(QPair<QString, QString>("ThreadId", "\\[([x0-9]+)\\]\\s*"));
+
+    std::unique_ptr<ILogLineParser> lineParser(new RegExpLogLineParser(headerRegExps, groupRegExp));
+    SplittedIndexesMap const splittedIndexesMap = SplitLinesByHeaderField(positionedLinesStorage, "ThreadId", *lineParser);
+
+    for (auto const& data : splittedIndexesMap)
+    {
+        qDebug() << data.first;
     }
 }
 

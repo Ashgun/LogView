@@ -1,5 +1,10 @@
 #include "BasePositionedLinesStorage.h"
 
+BasePositionedLinesStorage::BasePositionedLinesStorage(const BasePositionedLinesStorage& other) :
+    m_lines(other.m_lines)
+{
+}
+
 void BasePositionedLinesStorage::AddLine(const PositionedLine& positionedLine)
 {
     m_lines.push_back(positionedLine);
@@ -18,4 +23,9 @@ const PositionedLine&BasePositionedLinesStorage::operator [](const std::size_t i
 PositionedLine&BasePositionedLinesStorage::operator [](const std::size_t index)
 {
     return m_lines[index];
+}
+
+std::unique_ptr<IPositionedLinesStorage> BasePositionedLinesStorage::Clone() const
+{
+    return std::make_unique<BasePositionedLinesStorage>(*this);
 }
