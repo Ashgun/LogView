@@ -2,11 +2,18 @@
 
 #include "EventPattern.h"
 #include "LineMatcher.h"
+#include "PositionedLine.h"
 
 #include <QString>
 
 #include <memory>
 #include <vector>
+
+enum EventType
+{
+    Single,
+    Extended
+};
 
 class IMatchableEventPattern
 {
@@ -17,6 +24,8 @@ public:
     virtual bool IsPatternMatched(QString const& line) const = 0;
     virtual std::unique_ptr<IMatchableEventPattern> Clone() const = 0;
     virtual ~IMatchableEventPattern() = default;
+
+    virtual EventType GetType() const = 0;
 
 protected:
     LineMatcher m_lineMatcher;
@@ -33,6 +42,8 @@ public:
     bool IsPatternMatched(const QString& line) const override;
     std::unique_ptr<IMatchableEventPattern> Clone() const override;
 
+    EventType GetType() const override;
+
 public:
     EventPattern const Pattern;
 };
@@ -45,6 +56,8 @@ public:
         EventPattern const& altEndPattern);
     bool IsPatternMatched(const QString& line) const override;
     std::unique_ptr<IMatchableEventPattern> Clone() const override;
+
+    EventType GetType() const override;
 
 public:
     EventPattern const StartPattern;
@@ -95,4 +108,13 @@ public:
 public:
     bool IsAnyEventMatched(QString const& line) const;
     int GetLevelInHierarchy(QString const& line) const;
+};
+
+struct Event
+{
+    EventType Type;
+    QString Name;
+    PositionedLine StartLine;
+    PositionedLine EndLine;
+    std::vector<Event> NextLevelEvents;
 };

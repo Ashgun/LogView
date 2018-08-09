@@ -22,6 +22,11 @@ std::unique_ptr<IMatchableEventPattern> SingleEventPattern::Clone() const
     return std::make_unique<SingleEventPattern>(Name, Pattern);
 }
 
+EventType SingleEventPattern::GetType() const
+{
+    return EventType::Single;
+}
+
 ExtendedEventPattern::ExtendedEventPattern(QString const& name, const EventPattern& startPattern, const EventPattern& endPattern) :
     ExtendedEventPattern(name, startPattern, endPattern, endPattern)
 {
@@ -47,6 +52,11 @@ bool ExtendedEventPattern::IsPatternMatched(const QString& line) const
 std::unique_ptr<IMatchableEventPattern> ExtendedEventPattern::Clone() const
 {
     return std::make_unique<ExtendedEventPattern>(Name, StartPattern, EndPattern, AltEndPattern);
+}
+
+EventType ExtendedEventPattern::GetType() const
+{
+    return EventType::Extended;
 }
 
 EventPatterns::EventPatterns()
