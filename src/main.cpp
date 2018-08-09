@@ -259,12 +259,22 @@ void FilesIndexer_Test()
     {
         EventPatternsHierarchyMatcher lineSelector;
         lineSelector.EventPatterns.AddEventPattern(
-            CreateExtendedEvent(
+            CreateExtendedEvent("Service works",
                 EventPattern::CreateStringPattern("Logging started"),
                 EventPattern::CreateStringPattern("Logging finished")));
         lineSelector.EventPatterns.TopLevelNodes.back().AddSubEventPattern(
-            CreateSingleEvent(
-                EventPattern::CreateStringPattern("Kernel intialization completed")));
+            CreateSingleEvent("Accounts list obtained",
+                EventPattern::CreateStringPattern("[AccountRegistry] New accounts list obtained")));
+        lineSelector.EventPatterns.TopLevelNodes.back().AddSubEventPattern(
+                    CreateExtendedEvent("Tenant backup",
+                        EventPattern::CreateStringPattern("[TenantBackupProcessor] Session started"),
+                        EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed successfully"),
+                        EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed with errors")));
+        lineSelector.EventPatterns.TopLevelNodes.back().SubEvents.back().AddSubEventPattern(
+                    CreateExtendedEvent("Mailbox backup",
+                        EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was started"),
+                        EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was finished"),
+                        EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was failed")));
 
         FilesIndexer indexer(linePositionStorage, positionedLinesStorage, lineSelector);
         indexer.AddFileIndexes("log1.log");

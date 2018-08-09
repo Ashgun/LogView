@@ -1,13 +1,15 @@
 #include "Events.h"
 
-SingleEventPattern::SingleEventPattern(const EventPattern::PatternType& patternType, const EventPattern::PatternString& patternString) :
-    SingleEventPattern(EventPattern({patternType, patternString}))
+SingleEventPattern::SingleEventPattern(const QString& name, const EventPattern::PatternType& patternType,
+    const EventPattern::PatternString& patternString) :
+    SingleEventPattern(name, EventPattern({patternType, patternString}))
 {
 }
 
-SingleEventPattern::SingleEventPattern(const EventPattern& pattern) :
+SingleEventPattern::SingleEventPattern(const QString& name, const EventPattern& pattern) :
     Pattern(pattern)
 {
+    Name = name;
 }
 
 bool SingleEventPattern::IsPatternMatched(const QString& line) const
@@ -17,20 +19,21 @@ bool SingleEventPattern::IsPatternMatched(const QString& line) const
 
 std::unique_ptr<IMatchableEventPattern> SingleEventPattern::Clone() const
 {
-    return std::make_unique<SingleEventPattern>(Pattern);
+    return std::make_unique<SingleEventPattern>(Name, Pattern);
 }
 
-ExtendedEventPattern::ExtendedEventPattern(const EventPattern& startPattern, const EventPattern& endPattern) :
-    ExtendedEventPattern(startPattern, endPattern, endPattern)
+ExtendedEventPattern::ExtendedEventPattern(QString const& name, const EventPattern& startPattern, const EventPattern& endPattern) :
+    ExtendedEventPattern(name, startPattern, endPattern, endPattern)
 {
 }
 
-ExtendedEventPattern::ExtendedEventPattern(const EventPattern& startPattern, const EventPattern& endPattern,
+ExtendedEventPattern::ExtendedEventPattern(const QString& name, const EventPattern& startPattern, const EventPattern& endPattern,
     const EventPattern& altEndPattern) :
     StartPattern(startPattern),
     EndPattern(endPattern),
     AltEndPattern(altEndPattern)
 {
+    Name = name;
 }
 
 bool ExtendedEventPattern::IsPatternMatched(const QString& line) const
@@ -38,12 +41,12 @@ bool ExtendedEventPattern::IsPatternMatched(const QString& line) const
     return
         m_lineMatcher.IsPatternMatched(line, StartPattern) ||
         m_lineMatcher.IsPatternMatched(line, EndPattern) ||
-            m_lineMatcher.IsPatternMatched(line, AltEndPattern);
+        m_lineMatcher.IsPatternMatched(line, AltEndPattern);
 }
 
 std::unique_ptr<IMatchableEventPattern> ExtendedEventPattern::Clone() const
 {
-    return std::make_unique<ExtendedEventPattern>(StartPattern, EndPattern, AltEndPattern);
+    return std::make_unique<ExtendedEventPattern>(Name, StartPattern, EndPattern, AltEndPattern);
 }
 
 EventPatterns::EventPatterns()
@@ -152,20 +155,20 @@ int EventPatternsHierarchyMatcher::GetLevelInHierarchy(const QString& line) cons
     return -1;
 }
 
-IMatchableEventPatternPtr CreateSingleEvent(const EventPattern& pattern)
+IMatchableEventPatternPtr CreateSingleEvent(QString const& name, const EventPattern& pattern)
 {
-    return std::make_unique<SingleEventPattern>(pattern);
+    return std::make_unique<SingleEventPattern>(name, pattern);
 }
 
-IMatchableEventPatternPtr CreateExtendedEvent(const EventPattern& startPattern, const EventPattern& endPattern)
+IMatchableEventPatternPtr CreateExtendedEvent(QString const& name, const EventPattern& startPattern, const EventPattern& endPattern)
 {
-    return std::make_unique<ExtendedEventPattern>(startPattern, endPattern);
+    return std::make_unique<ExtendedEventPattern>(name, startPattern, endPattern);
 }
 
-IMatchableEventPatternPtr CreateExtendedEvent(const EventPattern& startPattern, const EventPattern& endPattern,
+IMatchableEventPatternPtr CreateExtendedEvent(QString const& name, const EventPattern& startPattern, const EventPattern& endPattern,
                                        const EventPattern& altEndPattern)
 {
-    return std::make_unique<ExtendedEventPattern>(startPattern, endPattern, altEndPattern);
+    return std::make_unique<ExtendedEventPattern>(name, startPattern, endPattern, altEndPattern);
 }
 
 void EventPatternsHierarchy::AddEventPattern(IMatchableEventPatternPtr event)

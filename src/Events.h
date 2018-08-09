@@ -3,11 +3,16 @@
 #include "EventPattern.h"
 #include "LineMatcher.h"
 
+#include <QString>
+
 #include <memory>
 #include <vector>
 
 class IMatchableEventPattern
 {
+public:
+    QString Name;
+
 public:
     virtual bool IsPatternMatched(QString const& line) const = 0;
     virtual std::unique_ptr<IMatchableEventPattern> Clone() const = 0;
@@ -22,8 +27,9 @@ using IMatchableEventPatternPtr = std::unique_ptr<IMatchableEventPattern>;
 class SingleEventPattern : public IMatchableEventPattern
 {
 public:
-    explicit SingleEventPattern(EventPattern const& pattern);
-    SingleEventPattern(EventPattern::PatternType const& patternType, EventPattern::PatternString const& patternString);
+    explicit SingleEventPattern(QString const& name, EventPattern const& pattern);
+    SingleEventPattern(const QString& name, EventPattern::PatternType const& patternType,
+        EventPattern::PatternString const& patternString);
     bool IsPatternMatched(const QString& line) const override;
     std::unique_ptr<IMatchableEventPattern> Clone() const override;
 
@@ -34,8 +40,8 @@ public:
 class ExtendedEventPattern : public IMatchableEventPattern
 {
 public:
-    ExtendedEventPattern(EventPattern const& startPattern, EventPattern const& endPattern);
-    ExtendedEventPattern(EventPattern const& startPattern, EventPattern const& endPattern,
+    ExtendedEventPattern(QString const& name, EventPattern const& startPattern, EventPattern const& endPattern);
+    ExtendedEventPattern(QString const& name, EventPattern const& startPattern, EventPattern const& endPattern,
         EventPattern const& altEndPattern);
     bool IsPatternMatched(const QString& line) const override;
     std::unique_ptr<IMatchableEventPattern> Clone() const override;
@@ -46,10 +52,11 @@ public:
     EventPattern const AltEndPattern;
 };
 
-IMatchableEventPatternPtr CreateSingleEvent(EventPattern const& pattern);
-IMatchableEventPatternPtr CreateExtendedEvent(EventPattern const& startPattern, EventPattern const& endPattern);
-IMatchableEventPatternPtr CreateExtendedEvent(EventPattern const& startPattern, EventPattern const& endPattern,
-    EventPattern const& altEndPattern);
+IMatchableEventPatternPtr CreateSingleEvent(QString const& name, EventPattern const& pattern);
+IMatchableEventPatternPtr CreateExtendedEvent(QString const& name, EventPattern const& startPattern,
+    EventPattern const& endPattern);
+IMatchableEventPatternPtr CreateExtendedEvent(QString const& name, EventPattern const& startPattern,
+    EventPattern const& endPattern, EventPattern const& altEndPattern);
 
 class EventPatterns
 {
