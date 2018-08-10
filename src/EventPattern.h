@@ -6,13 +6,13 @@
 class EventPattern
 {
 public:
-    typedef enum tag_PatternType
+    enum PatternType
     {
         String = 0,
         RegExp,
 
         Count
-    } PatternType;
+    };
 
     typedef QString PatternString;
 

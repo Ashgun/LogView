@@ -59,16 +59,19 @@ public:
 
     EventType GetType() const override;
 
+    bool IsStartPatternMatched(const QString& line) const;
+    bool IsEndPatternMatched(const QString& line) const;
+
 public:
     EventPattern const StartPattern;
     EventPattern const EndPattern;
     EventPattern const AltEndPattern;
 };
 
-IMatchableEventPatternPtr CreateSingleEvent(QString const& name, EventPattern const& pattern);
-IMatchableEventPatternPtr CreateExtendedEvent(QString const& name, EventPattern const& startPattern,
+IMatchableEventPatternPtr CreateSingleEventPattern(QString const& name, EventPattern const& pattern);
+IMatchableEventPatternPtr CreateExtendedEventPattern(QString const& name, EventPattern const& startPattern,
     EventPattern const& endPattern);
-IMatchableEventPatternPtr CreateExtendedEvent(QString const& name, EventPattern const& startPattern,
+IMatchableEventPatternPtr CreateExtendedEventPattern(QString const& name, EventPattern const& startPattern,
     EventPattern const& endPattern, EventPattern const& altEndPattern);
 
 class EventPatterns
@@ -82,11 +85,14 @@ public:
     IMatchableEventPattern const& operator[](std::size_t const index) const;
 
 private:
-    std::vector<IMatchableEventPatternPtr> m_events;
+    std::vector<IMatchableEventPatternPtr> m_eventPatterns;
 };
 
 struct EventPatternsHierarchyNode
 {
+    EventPatternsHierarchyNode() = default;
+    explicit EventPatternsHierarchyNode(EventPatternsHierarchyNode const& other);
+
     IMatchableEventPatternPtr Event;
     std::vector<EventPatternsHierarchyNode> SubEvents;
 
@@ -117,4 +123,12 @@ struct Event
     PositionedLine StartLine;
     PositionedLine EndLine;
     std::vector<Event> NextLevelEvents;
+
+    Event() = default;
 };
+
+Event CreateEventFromPattern(IMatchableEventPattern const& pattern);
+
+class IPositionedLinesStorage;
+
+std::vector<std::vector<Event>> FindEvents(EventPatternsHierarchy const& patterns, IPositionedLinesStorage const& lines);

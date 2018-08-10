@@ -251,34 +251,71 @@ SplittedIndexesMap SplitLinesByHeaderField(IPositionedLinesStorage const& source
     return result;
 }
 
+class SplittedPositionedLinesStorage : public IPositionedLinesStorage
+{
+public:
+    SplittedPositionedLinesStorage(IPositionedLinesStorage& decoratee, SplittedIndexes const& indexes) :
+        m_decoratee(decoratee),
+        m_indexes(indexes)
+    {
+    }
+
+    void AddLine(const PositionedLine& positionedLine) override
+    {
+        m_decoratee.AddLine(positionedLine);
+    }
+
+    std::size_t Size() const override
+    {
+        return m_indexes.size();
+    }
+
+    const PositionedLine&operator [](const std::size_t index) const override
+    {
+        return m_decoratee[m_indexes[index].first];
+    }
+
+    PositionedLine&operator [](const std::size_t index) override
+    {
+        return m_decoratee[m_indexes[index].first];
+    }
+
+    std::unique_ptr<IPositionedLinesStorage> Clone() const override
+    {
+        return std::make_unique<SplittedPositionedLinesStorage>(m_decoratee, m_indexes);
+    }
+
+private:
+    IPositionedLinesStorage& m_decoratee;
+    SplittedIndexes const& m_indexes;
+};
+
 void FilesIndexer_Test()
 {
     BaseLinePositionStorage linePositionStorage;
     BasePositionedLinesStorage positionedLinesStorage;
 
-    {
-        EventPatternsHierarchyMatcher lineSelector;
-        lineSelector.EventPatterns.AddEventPattern(
-            CreateExtendedEvent("Service works",
-                EventPattern::CreateStringPattern("Logging started"),
-                EventPattern::CreateStringPattern("Logging finished")));
-        lineSelector.EventPatterns.TopLevelNodes.back().AddSubEventPattern(
-            CreateSingleEvent("Accounts list obtained",
-                EventPattern::CreateStringPattern("[AccountRegistry] New accounts list obtained")));
-        lineSelector.EventPatterns.TopLevelNodes.back().AddSubEventPattern(
-                    CreateExtendedEvent("Tenant backup",
-                        EventPattern::CreateStringPattern("[TenantBackupProcessor] Session started"),
-                        EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed successfully"),
-                        EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed with errors")));
-        lineSelector.EventPatterns.TopLevelNodes.back().SubEvents.back().AddSubEventPattern(
-                    CreateExtendedEvent("Mailbox backup",
-                        EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was started"),
-                        EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was finished"),
-                        EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was failed")));
+    EventPatternsHierarchyMatcher lineSelector;
+    lineSelector.EventPatterns.AddEventPattern(
+        CreateExtendedEventPattern("Service works",
+            EventPattern::CreateStringPattern("Logging started"),
+            EventPattern::CreateStringPattern("Logging finished")));
+    lineSelector.EventPatterns.TopLevelNodes.back().AddSubEventPattern(
+        CreateSingleEventPattern("Accounts list obtained",
+            EventPattern::CreateStringPattern("[AccountRegistry] New accounts list obtained")));
+    lineSelector.EventPatterns.TopLevelNodes.back().AddSubEventPattern(
+                CreateExtendedEventPattern("Tenant backup",
+                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session started"),
+                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed successfully"),
+                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed with errors")));
+    lineSelector.EventPatterns.TopLevelNodes.back().SubEvents.back().AddSubEventPattern(
+                CreateExtendedEventPattern("Mailbox backup",
+                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was started"),
+                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was finished"),
+                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was failed")));
 
-        FilesIndexer indexer(linePositionStorage, positionedLinesStorage, lineSelector);
-        indexer.AddFileIndexes("log1.log");
-    }
+    FilesIndexer indexer(linePositionStorage, positionedLinesStorage, lineSelector);
+    indexer.AddFileIndexes("log1.log");
 
     LinePosition pos;
     pos = linePositionStorage[0];
@@ -294,12 +331,12 @@ void FilesIndexer_Test()
     }
 
     qDebug() << positionedLinesStorage.Size();
-    for (std::size_t i = 0; i < positionedLinesStorage.Size(); ++i)
-    {
-        PositionedLine const& line = positionedLinesStorage[i];
+//    for (std::size_t i = 0; i < positionedLinesStorage.Size(); ++i)
+//    {
+//        PositionedLine const& line = positionedLinesStorage[i];
 
-        qDebug() << i << line.Position.Offset << line.LevelInHierarchy << line.Line;
-    }
+//        qDebug() << i << line.Position.Offset << line.LevelInHierarchy << line.Line;
+//    }
 
     QString groupRegExp("");
     QVector<QPair<QString, QString>> headerRegExps;
@@ -313,7 +350,23 @@ void FilesIndexer_Test()
     for (auto const& data : splittedIndexesMap)
     {
         qDebug() << data.first;
+
+        SplittedPositionedLinesStorage splittedPositionedLinesStorage(positionedLinesStorage, data.second);
+        std::vector<std::vector<Event>> eventLevels = FindEvents(lineSelector.EventPatterns, splittedPositionedLinesStorage);
+
+        qDebug() << eventLevels.size();
+        for (auto const& eventLevel : eventLevels)
+        {
+            qDebug() << "-" << eventLevel.size();
+
+//            for (auto const& event : eventLevel)
+//            {
+//                qDebug() << event.Name << event.StartLine.Line;
+//            }
+        }
     }
+
+
 }
 
 int main(int argc, char *argv[])
