@@ -132,3 +132,10 @@ Event CreateEventFromPattern(IMatchableEventPattern const& pattern);
 class IPositionedLinesStorage;
 
 std::vector<std::vector<Event>> FindEvents(EventPatternsHierarchy const& patterns, IPositionedLinesStorage const& lines);
+
+bool IsEventsOverlapped(Event const& l, Event const& r);
+
+// < 0 -- the first event is earlier than the second one
+// = 0 -- the first event is overlapped with the second one
+// > 0 -- the first event is later than the second one
+int CheckEventsOrder(Event const& l, Event const& r);

@@ -232,7 +232,7 @@ void FindSingleEventInRange(SingleEventPattern const& pattern, IPositionedLinesS
         {
             LocatedEvent event;
             event.FoundEvent = CreateEventFromPattern(pattern);
-            event.FoundEvent.StartLine = lines[i];
+            event.FoundEvent.StartLine = event.FoundEvent.EndLine = lines[i];
             event.FoundEventStartLocation = event.FoundEventEndLocation = i;
 
             events.push_back(event);
@@ -353,4 +353,46 @@ Event CreateEventFromPattern(const IMatchableEventPattern& pattern)
     event.Type = pattern.GetType();
 
     return event;
+}
+
+namespace
+{
+
+bool IsPositionedLineBetweenToOthers(PositionedLine const& checkedLine, PositionedLine const& rangeStart,
+                                     PositionedLine const& rangeEnd)
+{
+    if (rangeEnd.Position.Offset < rangeStart.Position.Offset)
+    {
+        return IsPositionedLineBetweenToOthers(checkedLine, rangeEnd, rangeStart);
+    }
+
+    return
+        checkedLine.Position.Offset >= rangeStart.Position.Offset &&
+        checkedLine.Position.Offset <= rangeEnd.Position.Offset;
+}
+
+} // namespace
+
+bool IsEventsOverlapped(const Event& l, const Event& r)
+{
+    return
+        IsPositionedLineBetweenToOthers(l.StartLine, r.StartLine, r.EndLine) ||
+        IsPositionedLineBetweenToOthers(l.EndLine, r.StartLine, r.EndLine) ||
+        IsPositionedLineBetweenToOthers(r.StartLine, l.StartLine, l.EndLine) ||
+        IsPositionedLineBetweenToOthers(r.EndLine, l.StartLine, l.EndLine);
+}
+
+int CheckEventsOrder(const Event& l, const Event& r)
+{
+    if (IsEventsOverlapped(l, r))
+    {
+        return 0;
+    }
+
+    if (l.EndLine.Position.Offset < r.StartLine.Position.Offset)
+    {
+        return -1;
+    }
+
+    return 1;
 }
