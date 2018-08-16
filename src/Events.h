@@ -6,6 +6,7 @@
 
 #include <QString>
 
+#include <list>
 #include <memory>
 #include <vector>
 
@@ -120,18 +121,27 @@ struct Event
 {
     EventType Type;
     QString Name;
+    QString Group;
     PositionedLine StartLine;
     PositionedLine EndLine;
-    std::vector<Event> NextLevelEvents;
 
     Event() = default;
+    bool operator==(Event const& other) const;
 };
 
 Event CreateEventFromPattern(IMatchableEventPattern const& pattern);
 
+class IEventGroupExtractor
+{
+public:
+    virtual QString GetGroupFromLine(PositionedLine const& line) const = 0;
+    virtual ~IEventGroupExtractor() = default;
+};
+
 class IPositionedLinesStorage;
 
-std::vector<std::vector<Event>> FindEvents(EventPatternsHierarchy const& patterns, IPositionedLinesStorage const& lines);
+std::vector<std::vector<Event>> FindEvents(EventPatternsHierarchy const& patterns, IPositionedLinesStorage const& lines,
+                                           IEventGroupExtractor const& eventGroupExtractor);
 
 bool IsEventsOverlapped(Event const& l, Event const& r);
 
@@ -139,3 +149,7 @@ bool IsEventsOverlapped(Event const& l, Event const& r);
 // = 0 -- the first event is overlapped with the second one
 // > 0 -- the first event is later than the second one
 int CheckEventsOrder(Event const& l, Event const& r);
+
+using Events = std::list<Event>;
+using EventsHierarchy = std::list<Events>;
+void AddEventsToEventsHierarchy(std::vector<std::vector<Event>> const& splittedToLevelsEvents, EventsHierarchy& targetHierarchy);

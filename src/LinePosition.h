@@ -17,6 +17,7 @@ public:
 public:
     LinePosition();
     LinePosition(FileOffset fileOffset, FileIndex fileId);
+    bool operator==(LinePosition const& other) const;
 };
 
 #endif // LINEPOSITION_H

@@ -35,3 +35,11 @@ PositionedLine&PositionedLine::operator=(const PositionedLine& other)
 
     return *this;
 }
+
+bool PositionedLine::operator==(const PositionedLine& other) const
+{
+    return
+        Line == other.Line &&
+        Position == other.Position &&
+        LevelInHierarchy == other.LevelInHierarchy;
+}

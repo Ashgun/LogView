@@ -290,6 +290,30 @@ private:
     SplittedIndexes const& m_indexes;
 };
 
+class ThreadIdEventGroupExtractor : public IEventGroupExtractor
+{
+public:
+    ThreadIdEventGroupExtractor()
+    {
+        QString groupRegExp("");
+        QVector<QPair<QString, QString>> headerRegExps;
+        headerRegExps.push_back(QPair<QString, QString>("DateTime", "\\[([0-9_\\./\\-\\s:]+)\\]\\s*"));
+        headerRegExps.push_back(QPair<QString, QString>("LogLevel", "\\[([TILDWEF]){1,1}\\]\\s*"));
+        headerRegExps.push_back(QPair<QString, QString>("ThreadId", "\\[([x0-9]+)\\]\\s*"));
+
+        m_lineParser.reset(new RegExpLogLineParser(headerRegExps, groupRegExp));
+    }
+
+    QString GetGroupFromLine(const PositionedLine& line) const
+    {
+        LogLineInfo info = m_lineParser->Parse(line.Line);
+        return info.HeaderItems["ThreadId"];
+    }
+
+private:
+    std::unique_ptr<ILogLineParser> m_lineParser;
+};
+
 void FilesIndexer_Test()
 {
     BaseLinePositionStorage linePositionStorage;
@@ -347,24 +371,52 @@ void FilesIndexer_Test()
     std::unique_ptr<ILogLineParser> lineParser(new RegExpLogLineParser(headerRegExps, groupRegExp));
     SplittedIndexesMap const splittedIndexesMap = SplitLinesByHeaderField(positionedLinesStorage, "ThreadId", *lineParser);
 
+    std::vector<std::vector<Event>> allEvents;
+    allEvents.reserve(10);
+    ThreadIdEventGroupExtractor const threadIdEventGroupExtractor;
     for (auto const& data : splittedIndexesMap)
     {
-        qDebug() << data.first;
+//        qDebug() << data.first;
 
         SplittedPositionedLinesStorage splittedPositionedLinesStorage(positionedLinesStorage, data.second);
-        std::vector<std::vector<Event>> eventLevels = FindEvents(lineSelector.EventPatterns, splittedPositionedLinesStorage);
+        std::vector<std::vector<Event>> eventLevels = FindEvents(lineSelector.EventPatterns, splittedPositionedLinesStorage,
+                                                                 threadIdEventGroupExtractor);
 
-        qDebug() << eventLevels.size();
-        for (auto const& eventLevel : eventLevels)
+        if (allEvents.size() < eventLevels.size())
         {
-            qDebug() << "-" << eventLevel.size();
+            allEvents.resize(eventLevels.size());
+        }
+
+        for (std::size_t level = 0; level < eventLevels.size(); ++level)
+        {
+            std::copy(eventLevels[level].begin(), eventLevels[level].end(), std::back_inserter(allEvents[level]));
+        }
+
+//        qDebug() << eventLevels.size();
+//        for (auto const& eventLevel : eventLevels)
+//        {
+//            qDebug() << "-" << eventLevel.size();
+
+////            for (auto const& event : eventLevel)
+////            {
+////                qDebug() << event.Name << event.StartLine.Line;
+////            }
+//        }
+    }
+
+    qDebug() << allEvents.size();
+    for (auto const& eventLevel : allEvents)
+    {
+        qDebug() << "-" << eventLevel.size();
 
 //            for (auto const& event : eventLevel)
 //            {
 //                qDebug() << event.Name << event.StartLine.Line;
 //            }
-        }
     }
+
+    EventsHierarchy eventsHierarchy;
+    AddEventsToEventsHierarchy(allEvents, eventsHierarchy);
 
 
 }

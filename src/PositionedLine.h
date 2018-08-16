@@ -14,4 +14,5 @@ struct PositionedLine
     explicit PositionedLine(PositionedLine const& other);
     bool IsEmpty() const;
     PositionedLine& operator=(PositionedLine const& other);
+    bool operator==(PositionedLine const& other) const;
 };

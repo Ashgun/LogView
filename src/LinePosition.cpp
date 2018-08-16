@@ -9,3 +9,8 @@ LinePosition::LinePosition(FileOffset fileOffset, FileIndex fileId) :
     Index(fileId)
 {
 }
+
+bool LinePosition::operator==(const LinePosition& other) const
+{
+    return Offset == other.Offset && Index == other.Index;
+}
