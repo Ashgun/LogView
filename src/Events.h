@@ -7,7 +7,9 @@
 #include <QString>
 
 #include <list>
+#include <map>
 #include <memory>
+#include <set>
 #include <vector>
 
 enum EventType
@@ -149,6 +151,17 @@ bool IsEventsOverlapped(Event const& l, Event const& r);
 // = 0 -- the first event is overlapped with the second one
 // > 0 -- the first event is later than the second one
 int CheckEventsOrder(Event const& l, Event const& r);
+
+bool operator<(const Event& lhs, const Event& rhs);
+
+using GroupedEvents = std::set<Event>;
+
+struct EventsHierarchyNode
+{
+    Event Node;
+    GroupedEvents SameGroupChildrenEvents;
+    std::map<QString, GroupedEvents> OtherGroupChildrenEvents;
+};
 
 using Events = std::list<Event>;
 using EventsHierarchy = std::list<Events>;

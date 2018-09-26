@@ -62,7 +62,7 @@ void FilesIndexer::AddFileIndexes(const QString& filename)
 
                     LinePosition const pos(
                                 static_cast<FileOffset>(bufferStartOffset + previousEol + m_fileIndex * 1 * 1024 * 1024 * 1024),
-                                m_fileIndex);
+                                m_fileIndex, m_linePositionStorage.Size());
                     m_linePositionStorage.AddPosition(pos);
 
                     int const hierarchyLevel = m_lineSelector.GetLevelInHierarchy(line);

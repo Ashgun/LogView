@@ -13,10 +13,11 @@ class LinePosition
 public:
     FileOffset Offset;
     FileIndex Index;
+    LineNumber Number;
 
 public:
     LinePosition();
-    LinePosition(FileOffset fileOffset, FileIndex fileId);
+    LinePosition(FileOffset fileOffset, FileIndex fileId, LineNumber number);
     bool operator==(LinePosition const& other) const;
 };
 

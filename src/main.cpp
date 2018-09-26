@@ -314,6 +314,42 @@ private:
     std::unique_ptr<ILogLineParser> m_lineParser;
 };
 
+void FilesIndexer_Test2()
+{
+    BaseLinePositionStorage linePositionStorage;
+    BasePositionedLinesStorage positionedLinesStorage;
+
+    EventPatternsHierarchyMatcher lineSelector;
+    lineSelector.EventPatterns.AddEventPattern(
+        CreateExtendedEventPattern("Service works",
+            EventPattern::CreateStringPattern("Logging started"),
+            EventPattern::CreateStringPattern("Logging finished")));
+    lineSelector.EventPatterns.TopLevelNodes.back().AddSubEventPattern(
+        CreateSingleEventPattern("Accounts list obtained",
+            EventPattern::CreateStringPattern("[AccountRegistry] New accounts list obtained")));
+    lineSelector.EventPatterns.TopLevelNodes.back().AddSubEventPattern(
+                CreateExtendedEventPattern("Tenant backup",
+                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session started"),
+                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed successfully"),
+                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed with errors")));
+    lineSelector.EventPatterns.TopLevelNodes.back().SubEvents.back().AddSubEventPattern(
+                CreateExtendedEventPattern("Mailbox backup",
+                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was started"),
+                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was finished"),
+                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was failed")));
+
+    FilesIndexer indexer(linePositionStorage, positionedLinesStorage, lineSelector);
+    indexer.AddFileIndexes("log1.log");
+
+    qDebug() << positionedLinesStorage.Size();
+
+    ThreadIdEventGroupExtractor const threadIdEventGroupExtractor;
+    std::vector<std::vector<Event>> eventLevels = FindEvents(lineSelector.EventPatterns, positionedLinesStorage,
+                                                             threadIdEventGroupExtractor);
+
+    qDebug() << eventLevels.size();
+}
+
 void FilesIndexer_Test()
 {
     BaseLinePositionStorage linePositionStorage;
@@ -433,7 +469,8 @@ int main(int argc, char *argv[])
 //    tests::ParsingTest03();
 
 //    ILogLineParser_Test();
-    FilesIndexer_Test();
+//    FilesIndexer_Test();
+    FilesIndexer_Test2();
 
     std::cout << "Finish" << std::endl;
 

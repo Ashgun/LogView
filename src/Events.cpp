@@ -248,11 +248,13 @@ void FindExtendedEventInRange(ExtendedEventPattern const& pattern, IPositionedLi
 {
     for (std::size_t i = firstInd; i < lastInd; ++i)
     {
-        if (pattern.IsStartPatternMatched(lines[i].Line))
+        const auto& positionedLineToProc = lines[i];
+
+        if (pattern.IsStartPatternMatched(positionedLineToProc.Line))
         {
             LocatedEvent event;
             event.FoundEvent = CreateEventFromPattern(pattern);
-            event.FoundEvent.StartLine = lines[i];
+            event.FoundEvent.StartLine = positionedLineToProc;
             event.FoundEvent.Group = eventGroupExtractor.GetGroupFromLine(event.FoundEvent.StartLine);
             event.FoundEventStartLocation = i;
 
@@ -261,10 +263,19 @@ void FindExtendedEventInRange(ExtendedEventPattern const& pattern, IPositionedLi
             continue;
         }
 
-        if (pattern.IsEndPatternMatched(lines[i].Line))
+        if (pattern.IsEndPatternMatched(positionedLineToProc.Line))
         {
-            events.back().FoundEvent.EndLine = lines[i];
-            events.back().FoundEventEndLocation = i;
+            const auto group = eventGroupExtractor.GetGroupFromLine(positionedLineToProc);
+            for (std::vector<LocatedEvent>::reverse_iterator iter = events.rbegin(); iter != events.rend(); ++iter)
+            {
+                if (iter->FoundEvent.Group == group && iter->FoundEvent.Type == EventType::Extended)
+                {
+                    iter->FoundEvent.EndLine = positionedLineToProc;
+                    iter->FoundEventEndLocation = i;
+
+                    break;
+                }
+            }
         }
     }
 }
@@ -364,12 +375,12 @@ Event CreateEventFromPattern(const IMatchableEventPattern& pattern)
 namespace
 {
 
-bool IsPositionedLineBetweenToOthers(PositionedLine const& checkedLine, PositionedLine const& rangeStart,
+bool IsPositionedLineBetweenTwoOthers(PositionedLine const& checkedLine, PositionedLine const& rangeStart,
                                      PositionedLine const& rangeEnd)
 {
     if (rangeEnd.Position.Offset < rangeStart.Position.Offset)
     {
-        return IsPositionedLineBetweenToOthers(checkedLine, rangeEnd, rangeStart);
+        return IsPositionedLineBetweenTwoOthers(checkedLine, rangeEnd, rangeStart);
     }
 
     return
@@ -382,10 +393,10 @@ bool IsPositionedLineBetweenToOthers(PositionedLine const& checkedLine, Position
 bool IsEventsOverlapped(const Event& l, const Event& r)
 {
     return
-        IsPositionedLineBetweenToOthers(l.StartLine, r.StartLine, r.EndLine) ||
-        IsPositionedLineBetweenToOthers(l.EndLine, r.StartLine, r.EndLine) ||
-        IsPositionedLineBetweenToOthers(r.StartLine, l.StartLine, l.EndLine) ||
-        IsPositionedLineBetweenToOthers(r.EndLine, l.StartLine, l.EndLine);
+        IsPositionedLineBetweenTwoOthers(l.StartLine, r.StartLine, r.EndLine) ||
+        IsPositionedLineBetweenTwoOthers(l.EndLine, r.StartLine, r.EndLine) ||
+        IsPositionedLineBetweenTwoOthers(r.StartLine, l.StartLine, l.EndLine) ||
+        IsPositionedLineBetweenTwoOthers(r.EndLine, l.StartLine, l.EndLine);
 }
 
 int CheckEventsOrder(const Event& l, const Event& r)
@@ -421,4 +432,9 @@ bool Event::operator==(const Event& other) const
         Group == other.Group &&
         StartLine == other.StartLine &&
         EndLine == other.EndLine;
+}
+
+bool operator<(const Event& lhs, const Event& rhs)
+{
+    return CheckEventsOrder(lhs, rhs) < 0;
 }
