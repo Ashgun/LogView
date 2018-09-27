@@ -145,6 +145,17 @@ class IPositionedLinesStorage;
 std::vector<std::vector<Event>> FindEvents(EventPatternsHierarchy const& patterns, IPositionedLinesStorage const& lines,
                                            IEventGroupExtractor const& eventGroupExtractor);
 
+
+using EventIndexInLevel = std::size_t;
+using SubEventsLinks = std::vector<EventIndexInLevel>;
+using GroupedSubEventsLinks = std::map<decltype(Event::Group), SubEventsLinks>;
+using GroupedSubEventsLinksHierarchy = std::vector<GroupedSubEventsLinks>;
+
+GroupedSubEventsLinksHierarchy LinkEventsToHierarchy(std::vector<std::vector<Event>> const& eventLevels);
+
+
+
+
 bool IsEventsOverlapped(Event const& l, Event const& r);
 
 // < 0 -- the first event is earlier than the second one

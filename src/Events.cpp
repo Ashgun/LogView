@@ -438,3 +438,28 @@ bool operator<(const Event& lhs, const Event& rhs)
 {
     return CheckEventsOrder(lhs, rhs) < 0;
 }
+
+GroupedSubEventsLinksHierarchy LinkEventsToHierarchy(const std::vector<std::vector<Event> >& eventLevels)
+{
+    GroupedSubEventsLinksHierarchy linksHierarchy(eventLevels.size() - 1);
+    for (std::size_t i = 0; i < eventLevels.size() - 1; ++i)
+    {
+        std::vector<Event> const& currentLevel = eventLevels[i];
+        std::vector<Event> const& nextLevel = eventLevels[i + 1];
+        GroupedSubEventsLinksHierarchy::value_type& currentHierarchyLevel = linksHierarchy[i];
+        for (std::size_t currentLevelEventNum = 0; currentLevelEventNum < currentLevel.size(); ++currentLevelEventNum)
+        {
+            Event const& currentLevelEvent = currentLevel[currentLevelEventNum];
+            for (std::size_t nextLevelEventNum = 0; nextLevelEventNum < nextLevel.size(); ++nextLevelEventNum)
+            {
+                Event const& nextLevelEvent = nextLevel[nextLevelEventNum];
+                if (IsEventsOverlapped(currentLevelEvent, nextLevelEvent))
+                {
+                    currentHierarchyLevel[nextLevelEvent.Group].push_back(nextLevelEventNum);
+                }
+            }
+        }
+    }
+
+    return linksHierarchy;
+}

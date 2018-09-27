@@ -347,6 +347,8 @@ void FilesIndexer_Test2()
     std::vector<std::vector<Event>> eventLevels = FindEvents(lineSelector.EventPatterns, positionedLinesStorage,
                                                              threadIdEventGroupExtractor);
 
+    GroupedSubEventsLinksHierarchy linksHierarchy = LinkEventsToHierarchy(eventLevels);
+
     qDebug() << eventLevels.size();
 }
 
