@@ -290,28 +290,43 @@ private:
     SplittedIndexes const& m_indexes;
 };
 
-class ThreadIdEventGroupExtractor : public IEventGroupExtractor
+class EventGroupExtractor : public IEventGroupExtractor
 {
 public:
-    ThreadIdEventGroupExtractor()
+    explicit EventGroupExtractor(QVector<QPair<QString, QString>> const& headerRegExps, QString const& groupName) :
+        m_groupName(groupName)
     {
         QString groupRegExp("");
+        m_lineParser.reset(new RegExpLogLineParser(headerRegExps, groupRegExp));
+    }
+
+    QString GetGroupFromLine(const PositionedLine& line) const override
+    {
+        LogLineInfo info = m_lineParser->Parse(line.Line);
+        return info.HeaderItems[m_groupName];
+    }
+
+private:
+    std::unique_ptr<ILogLineParser> m_lineParser;
+    QString const m_groupName;
+};
+
+class ThreadIdEventGroupExtractor : public EventGroupExtractor
+{
+private:
+    static QVector<QPair<QString, QString>> CreateHeaderRegExps()
+    {
         QVector<QPair<QString, QString>> headerRegExps;
         headerRegExps.push_back(QPair<QString, QString>("DateTime", "\\[([0-9_\\./\\-\\s:]+)\\]\\s*"));
         headerRegExps.push_back(QPair<QString, QString>("LogLevel", "\\[([TILDWEF]){1,1}\\]\\s*"));
         headerRegExps.push_back(QPair<QString, QString>("ThreadId", "\\[([x0-9]+)\\]\\s*"));
 
-        m_lineParser.reset(new RegExpLogLineParser(headerRegExps, groupRegExp));
+        return headerRegExps;
     }
-
-    QString GetGroupFromLine(const PositionedLine& line) const
+public:
+    ThreadIdEventGroupExtractor() : EventGroupExtractor(CreateHeaderRegExps(), "ThreadId")
     {
-        LogLineInfo info = m_lineParser->Parse(line.Line);
-        return info.HeaderItems["ThreadId"];
     }
-
-private:
-    std::unique_ptr<ILogLineParser> m_lineParser;
 };
 
 void FilesIndexer_Test2()

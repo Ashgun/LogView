@@ -446,7 +446,6 @@ GroupedSubEventsLinksHierarchy LinkEventsToHierarchy(const std::vector<std::vect
     GroupedSubEventsLinksHierarchy linksHierarchy(eventLevels.size() - 1);
     for (std::size_t currentLevelNum = 0; currentLevelNum < eventLevels.size() - 1; ++currentLevelNum)
     {
-        qDebug() << "+" << currentLevelNum;
         std::vector<Event> const& currentLevel = eventLevels[currentLevelNum];
         std::vector<Event> const& nextLevel = eventLevels[currentLevelNum + 1];
         GroupedSubEventsLinksHierarchy::value_type& currentHierarchyLevel = linksHierarchy[currentLevelNum];
@@ -459,7 +458,6 @@ GroupedSubEventsLinksHierarchy LinkEventsToHierarchy(const std::vector<std::vect
                 continue;
             }
 
-            qDebug() << "*" << currentLevelEventNum << currentLevelEvent.Group;
             for (std::size_t nextLevelEventNum = 0; nextLevelEventNum < nextLevel.size(); ++nextLevelEventNum)
             {
                 Event const& nextLevelEvent = nextLevel[nextLevelEventNum];
@@ -469,7 +467,6 @@ GroupedSubEventsLinksHierarchy LinkEventsToHierarchy(const std::vector<std::vect
                     continue;
                 }
 
-                qDebug() << "**" << nextLevelEventNum << nextLevelEvent.Group;
                 if (IsEventsOverlapped(currentLevelEvent, nextLevelEvent))
                 {
                     currentHierarchyLevel[nextLevelEvent.Group].push_back(nextLevelEventNum);
