@@ -364,6 +364,8 @@ void FilesIndexer_Test2()
 
     GroupedSubEventsLinksHierarchy linksHierarchy = LinkEventsToHierarchy(eventLevels);
 
+    EventHierarchyInfoForLines eventHierarchyInfoForLines = GetHierarchyInfoForLines(positionedLinesStorage, eventLevels);
+
     qDebug() << eventLevels.size();
 }
 

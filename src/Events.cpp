@@ -234,6 +234,7 @@ void FindSingleEventInRange(SingleEventPattern const& pattern, IPositionedLinesS
             LocatedEvent event;
             event.FoundEvent = CreateEventFromPattern(pattern);
             event.FoundEvent.StartLine = event.FoundEvent.EndLine = lines[i];
+            event.FoundEvent.StartLine.Position.Number = event.FoundEvent.EndLine.Position.Number = i;
             event.FoundEvent.Group = eventGroupExtractor.GetGroupFromLine(event.FoundEvent.StartLine);
             event.FoundEventStartLocation = event.FoundEventEndLocation = i;
 
@@ -255,6 +256,7 @@ void FindExtendedEventInRange(ExtendedEventPattern const& pattern, IPositionedLi
             LocatedEvent event;
             event.FoundEvent = CreateEventFromPattern(pattern);
             event.FoundEvent.StartLine = positionedLineToProc;
+            event.FoundEvent.StartLine.Position.Number = i;
             event.FoundEvent.Group = eventGroupExtractor.GetGroupFromLine(event.FoundEvent.StartLine);
             event.FoundEventStartLocation = i;
 
@@ -271,6 +273,7 @@ void FindExtendedEventInRange(ExtendedEventPattern const& pattern, IPositionedLi
                 if (iter->FoundEvent.Group == group && iter->FoundEvent.Type == EventType::Extended)
                 {
                     iter->FoundEvent.EndLine = positionedLineToProc;
+                    iter->FoundEvent.EndLine.Position.Number = i;
                     iter->FoundEventEndLocation = i;
 
                     break;
@@ -476,4 +479,24 @@ GroupedSubEventsLinksHierarchy LinkEventsToHierarchy(const std::vector<std::vect
     }
 
     return linksHierarchy;
+}
+
+EventHierarchyInfoForLines GetHierarchyInfoForLines(const IPositionedLinesStorage& positionedLinesStorage, const std::vector<std::vector<Event> >& eventLevels)
+{
+    EventHierarchyInfoForLines result;
+    result.resize(positionedLinesStorage.Size());
+
+    for (std::size_t eventLevelNum = 0; eventLevelNum < eventLevels.size(); ++eventLevelNum)
+    {
+        auto const& eventLevel = eventLevels[eventLevelNum];
+
+        for (std::size_t eventNumInLevel = 0; eventNumInLevel < eventLevel.size(); ++eventNumInLevel)
+        {
+            Event const& event = eventLevel[eventNumInLevel];
+            result[event.StartLine.Position.Number] = EventHierarchyInfo({ event.Group, eventLevelNum, eventNumInLevel});
+            result[event.EndLine.Position.Number] = EventHierarchyInfo({ event.Group, eventLevelNum, eventNumInLevel });
+        }
+    }
+
+    return result;
 }

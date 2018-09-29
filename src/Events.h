@@ -177,3 +177,18 @@ struct EventsHierarchyNode
 using Events = std::list<Event>;
 using EventsHierarchy = std::list<Events>;
 void AddEventsToEventsHierarchy(std::vector<std::vector<Event>> const& splittedToLevelsEvents, EventsHierarchy& targetHierarchy);
+
+struct EventHierarchyInfo
+{
+    using LineGroupName = QString;
+    using EventLevelOfLine = std::size_t;
+
+    LineGroupName Group;
+    EventLevelOfLine Level;
+    std::size_t EventIndexInHierarchyLevel;
+};
+
+using EventHierarchyInfoForLines = QVector<EventHierarchyInfo>;
+
+EventHierarchyInfoForLines GetHierarchyInfoForLines(IPositionedLinesStorage const& positionedLinesStorage,
+                                             std::vector<std::vector<Event>> const& eventLevels);
