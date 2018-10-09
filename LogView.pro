@@ -1,6 +1,6 @@
 TARGET = LogView
 
-QT -= gui
+greaterThan(QT_MAJOR_VERSION, 4): QT += core gui widgets
 
 CONFIG += c++14
 CONFIG += console
@@ -27,7 +27,12 @@ SOURCES += src/main.cpp \
     src/LineMatcher.cpp \
     src/BasePositionedLinesStorage.cpp \
     src/Events.cpp \
-    src/PositionedLine.cpp
+    src/PositionedLine.cpp \
+    src/LogViewMainWindow.cpp \
+    src/CustomView.cpp \
+    src/CustomItem.cpp \
+    src/EventGraphicsItem.cpp \
+    src/EventsGraphicsScene.cpp
 
 HEADERS += \
     src/ILogLineParser.h \
@@ -45,4 +50,9 @@ HEADERS += \
     src/IPositionedLinesStorage.h \
     src/BasePositionedLinesStorage.h \
     src/Events.h \
-    src/PositionedLine.h
+    src/PositionedLine.h \
+    src/LogViewMainWindow.h \
+    src/CustomView.h \
+    src/CustomItem.h \
+    src/EventGraphicsItem.h \
+    src/EventsGraphicsScene.h

@@ -124,6 +124,7 @@ struct Event
     EventType Type;
     QString Name;
     QString Group;
+    int Level = -1;
     PositionedLine StartLine;
     PositionedLine EndLine;
 

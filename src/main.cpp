@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include <QApplication>
 #include <QString>
 #include <QVector>
 
@@ -329,7 +330,9 @@ public:
     }
 };
 
-void FilesIndexer_Test2()
+#include "LogViewMainWindow.h"
+
+int RunAll(int argc, char *argv[])
 {
     BaseLinePositionStorage linePositionStorage;
     BasePositionedLinesStorage positionedLinesStorage;
@@ -367,6 +370,13 @@ void FilesIndexer_Test2()
     EventHierarchyInfoForLines eventHierarchyInfoForLines = GetHierarchyInfoForLines(positionedLinesStorage, eventLevels);
 
     qDebug() << eventLevels.size();
+
+    QApplication a(argc, argv);
+
+    LogViewMainWindow window(eventLevels);
+    window.showMaximized();
+
+    return a.exec();
 }
 
 void FilesIndexer_Test()
@@ -476,9 +486,22 @@ void FilesIndexer_Test()
 
 }
 
+#include "LogViewMainWindow.h"
+
+int LogViewMainWindow_Test(int argc, char *argv[])
+{
+    QApplication a(argc, argv);
+
+    std::vector<std::vector<Event>> levels;
+    LogViewMainWindow window(levels);
+    window.showMaximized();
+
+    return a.exec();
+}
+
 int main(int argc, char *argv[])
 {
-    QCoreApplication a(argc, argv);
+//    QCoreApplication a(argc, argv);
 
     std::cout << "Start" << std::endl;
 
@@ -489,7 +512,10 @@ int main(int argc, char *argv[])
 
 //    ILogLineParser_Test();
 //    FilesIndexer_Test();
-    FilesIndexer_Test2();
+
+    RunAll(argc, argv);
+
+//    LogViewMainWindow_Test(argc, argv);
 
     std::cout << "Finish" << std::endl;
 
