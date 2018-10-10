@@ -21,6 +21,14 @@ enum EventType
 class IMatchableEventPattern
 {
 public:
+    struct Color
+    {
+        quint8 R;
+        quint8 G;
+        quint8 B;
+    };
+
+public:
     QString Name;
 
 public:
@@ -32,16 +40,20 @@ public:
 
 protected:
     LineMatcher m_lineMatcher;
+
 };
+
+IMatchableEventPattern::Color CreateColor(const quint8 R, const quint8 G, const quint8 B);
 
 using IMatchableEventPatternPtr = std::unique_ptr<IMatchableEventPattern>;
 
 class SingleEventPattern : public IMatchableEventPattern
 {
 public:
-    explicit SingleEventPattern(QString const& name, EventPattern const& pattern);
+    explicit SingleEventPattern(QString const& name, EventPattern const& pattern,
+        const IMatchableEventPattern::Color& color);
     SingleEventPattern(const QString& name, EventPattern::PatternType const& patternType,
-        EventPattern::PatternString const& patternString);
+        EventPattern::PatternString const& patternString, const IMatchableEventPattern::Color& color);
     bool IsPatternMatched(const QString& line) const override;
     std::unique_ptr<IMatchableEventPattern> Clone() const override;
 
@@ -49,33 +61,44 @@ public:
 
 public:
     EventPattern const Pattern;
+    Color ViewColor;
 };
 
 class ExtendedEventPattern : public IMatchableEventPattern
 {
 public:
-    ExtendedEventPattern(QString const& name, EventPattern const& startPattern, EventPattern const& endPattern);
     ExtendedEventPattern(QString const& name, EventPattern const& startPattern, EventPattern const& endPattern,
-        EventPattern const& altEndPattern);
+                         const IMatchableEventPattern::Color& color);
+    ExtendedEventPattern(QString const& name, EventPattern const& startPattern, EventPattern const& endPattern,
+        EventPattern const& altEndPattern,
+        const IMatchableEventPattern::Color& successColor, const IMatchableEventPattern::Color& altColor);
     bool IsPatternMatched(const QString& line) const override;
     std::unique_ptr<IMatchableEventPattern> Clone() const override;
 
     EventType GetType() const override;
 
     bool IsStartPatternMatched(const QString& line) const;
+    bool IsEndOrAltPatternMatched(const QString& line) const;
+
     bool IsEndPatternMatched(const QString& line) const;
+    bool IsAltPatternMatched(const QString& line) const;
 
 public:
     EventPattern const StartPattern;
     EventPattern const EndPattern;
     EventPattern const AltEndPattern;
+
+    Color SuccessEndColor;
+    Color AltEndColor;
 };
 
-IMatchableEventPatternPtr CreateSingleEventPattern(QString const& name, EventPattern const& pattern);
+IMatchableEventPatternPtr CreateSingleEventPattern(QString const& name, EventPattern const& pattern, const IMatchableEventPattern::Color& color);
+
 IMatchableEventPatternPtr CreateExtendedEventPattern(QString const& name, EventPattern const& startPattern,
-    EventPattern const& endPattern);
+    EventPattern const& endPattern, const IMatchableEventPattern::Color& color);
 IMatchableEventPatternPtr CreateExtendedEventPattern(QString const& name, EventPattern const& startPattern,
-    EventPattern const& endPattern, EventPattern const& altEndPattern);
+    EventPattern const& endPattern, EventPattern const& altEndPattern,
+    const IMatchableEventPattern::Color& successColor, const IMatchableEventPattern::Color& altColor);
 
 class EventPatterns
 {
@@ -127,6 +150,8 @@ struct Event
     int Level = -1;
     PositionedLine StartLine;
     PositionedLine EndLine;
+
+    IMatchableEventPattern::Color ViewColor;
 
     Event() = default;
     bool operator==(Event const& other) const;

@@ -341,20 +341,24 @@ int RunAll(int argc, char *argv[])
     lineSelector.EventPatterns.AddEventPattern(
         CreateExtendedEventPattern("Service works",
             EventPattern::CreateStringPattern("Logging started"),
-            EventPattern::CreateStringPattern("Logging finished")));
+            EventPattern::CreateStringPattern("Logging finished"),
+            CreateColor(128, 128, 128)));
     lineSelector.EventPatterns.TopLevelNodes.back().AddSubEventPattern(
         CreateSingleEventPattern("Accounts list obtained",
-            EventPattern::CreateStringPattern("[AccountRegistry] New accounts list obtained")));
+            EventPattern::CreateStringPattern("[AccountRegistry] New accounts list obtained"),
+            CreateColor(128, 128, 0)));
     lineSelector.EventPatterns.TopLevelNodes.back().AddSubEventPattern(
                 CreateExtendedEventPattern("Tenant backup",
                     EventPattern::CreateStringPattern("[TenantBackupProcessor] Session started"),
                     EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed successfully"),
-                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed with errors")));
+                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed with errors"),
+                    CreateColor(0, 128, 0), CreateColor(128, 0, 0)));
     lineSelector.EventPatterns.TopLevelNodes.back().SubEvents.back().AddSubEventPattern(
                 CreateExtendedEventPattern("Mailbox backup",
                     EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was started"),
                     EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was finished"),
-                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was failed")));
+                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was failed"),
+                    CreateColor(0, 255, 0), CreateColor(255, 0, 0)));
 
     FilesIndexer indexer(linePositionStorage, positionedLinesStorage, lineSelector);
     indexer.AddFileIndexes("log1.log");
@@ -373,7 +377,7 @@ int RunAll(int argc, char *argv[])
 
     QApplication a(argc, argv);
 
-    LogViewMainWindow window(eventLevels);
+    LogViewMainWindow window(positionedLinesStorage, eventLevels);
     window.showMaximized();
 
     return a.exec();
@@ -388,20 +392,24 @@ void FilesIndexer_Test()
     lineSelector.EventPatterns.AddEventPattern(
         CreateExtendedEventPattern("Service works",
             EventPattern::CreateStringPattern("Logging started"),
-            EventPattern::CreateStringPattern("Logging finished")));
+            EventPattern::CreateStringPattern("Logging finished"),
+            CreateColor(128, 128, 128)));
     lineSelector.EventPatterns.TopLevelNodes.back().AddSubEventPattern(
         CreateSingleEventPattern("Accounts list obtained",
-            EventPattern::CreateStringPattern("[AccountRegistry] New accounts list obtained")));
+            EventPattern::CreateStringPattern("[AccountRegistry] New accounts list obtained"),
+            CreateColor(128, 128, 0)));
     lineSelector.EventPatterns.TopLevelNodes.back().AddSubEventPattern(
                 CreateExtendedEventPattern("Tenant backup",
                     EventPattern::CreateStringPattern("[TenantBackupProcessor] Session started"),
                     EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed successfully"),
-                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed with errors")));
+                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed with errors"),
+                    CreateColor(0, 128, 0), CreateColor(128, 0, 0)));
     lineSelector.EventPatterns.TopLevelNodes.back().SubEvents.back().AddSubEventPattern(
                 CreateExtendedEventPattern("Mailbox backup",
                     EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was started"),
                     EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was finished"),
-                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was failed")));
+                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was failed"),
+                    CreateColor(0, 255, 0), CreateColor(255, 0, 0)));
 
     FilesIndexer indexer(linePositionStorage, positionedLinesStorage, lineSelector);
     indexer.AddFileIndexes("log1.log");
@@ -493,7 +501,8 @@ int LogViewMainWindow_Test(int argc, char *argv[])
     QApplication a(argc, argv);
 
     std::vector<std::vector<Event>> levels;
-    LogViewMainWindow window(levels);
+    BasePositionedLinesStorage positionedLinesStorage;
+    LogViewMainWindow window(positionedLinesStorage, levels);
     window.showMaximized();
 
     return a.exec();

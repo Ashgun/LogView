@@ -8,13 +8,22 @@
 #include "CustomItem.h"
 #include "EventGraphicsItem.h"
 #include "Events.h"
+#include "IPositionedLinesStorage.h"
 
-LogViewMainWindow::LogViewMainWindow(const std::vector<std::vector<Event>>& eventLevels, QWidget *parent) : QMainWindow(parent)
+LogViewMainWindow::LogViewMainWindow(
+        IPositionedLinesStorage& linesStorage,
+        const std::vector<std::vector<Event>>& eventLevels,
+        QWidget *parent) :
+    QMainWindow(parent)
 {
     qRegisterMetaType<Event>("Event");
 
+    const int baseY = 15;
+    const int baseHeight = 15;
+    std::size_t linesCount = linesStorage.Size();
+
     gui_EventsViewScene = new EventsGraphicsScene(this);
-    gui_EventsViewScene->setSceneRect(0, 0, width() * 2, height() * 10);
+    gui_EventsViewScene->setSceneRect(0, 0, width() * 2, linesCount * baseHeight + baseHeight + 2 * baseY);
 
     gui_EventsView = new QGraphicsView();
     gui_EventsView->setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -65,8 +74,6 @@ LogViewMainWindow::LogViewMainWindow(const std::vector<std::vector<Event>>& even
         {
             const std::size_t groupIndex = groups[eventLevels[level][i].Group];
 
-            const int baseY = 15;
-            const int baseHeight = 15;
             const int verticalSpace = 2;
 
             const int baseX = 5;
@@ -102,6 +109,14 @@ LogViewMainWindow::LogViewMainWindow(const std::vector<std::vector<Event>>& even
 void LogViewMainWindow::slot_EventSelected(Event event)
 {
     qDebug() << "*** Event item clicked:" << event.Name;
-    qDebug() << event.StartLine.Line;
-    qDebug() << event.EndLine.Line;
+
+    if (event.Type == EventType::Single)
+    {
+        qDebug() << event.StartLine.Line;
+    }
+    else
+    {
+        qDebug() << event.StartLine.Line;
+        qDebug() << event.EndLine.Line;
+    }
 }

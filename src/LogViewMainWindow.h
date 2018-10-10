@@ -9,11 +9,13 @@
 
 #include <vector>
 
+class IPositionedLinesStorage;
+
 class LogViewMainWindow : public QMainWindow
 {
     Q_OBJECT
 public:
-    explicit LogViewMainWindow(const std::vector<std::vector<Event>>& eventLevels, QWidget *parent = nullptr);
+    explicit LogViewMainWindow(IPositionedLinesStorage& linesStorage, const std::vector<std::vector<Event>>& eventLevels, QWidget *parent = nullptr);
 
 signals:
 

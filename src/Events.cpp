@@ -2,13 +2,14 @@
 #include "IPositionedLinesStorage.h"
 
 SingleEventPattern::SingleEventPattern(const QString& name, const EventPattern::PatternType& patternType,
-    const EventPattern::PatternString& patternString) :
-    SingleEventPattern(name, EventPattern({patternType, patternString}))
+    const EventPattern::PatternString& patternString, const IMatchableEventPattern::Color& color) :
+    SingleEventPattern(name, EventPattern({patternType, patternString}), color)
 {
 }
 
-SingleEventPattern::SingleEventPattern(const QString& name, const EventPattern& pattern) :
-    Pattern(pattern)
+SingleEventPattern::SingleEventPattern(const QString& name, const EventPattern& pattern, const IMatchableEventPattern::Color& color) :
+    Pattern(pattern),
+    ViewColor(color)
 {
     Name = name;
 }
@@ -20,7 +21,7 @@ bool SingleEventPattern::IsPatternMatched(const QString& line) const
 
 std::unique_ptr<IMatchableEventPattern> SingleEventPattern::Clone() const
 {
-    return std::make_unique<SingleEventPattern>(Name, Pattern);
+    return std::make_unique<SingleEventPattern>(Name, Pattern, ViewColor);
 }
 
 EventType SingleEventPattern::GetType() const
@@ -28,16 +29,19 @@ EventType SingleEventPattern::GetType() const
     return EventType::Single;
 }
 
-ExtendedEventPattern::ExtendedEventPattern(QString const& name, const EventPattern& startPattern, const EventPattern& endPattern) :
-    ExtendedEventPattern(name, startPattern, endPattern, endPattern)
+ExtendedEventPattern::ExtendedEventPattern(QString const& name, const EventPattern& startPattern, const EventPattern& endPattern,
+                                           const IMatchableEventPattern::Color& color) :
+    ExtendedEventPattern(name, startPattern, endPattern, endPattern, color, color)
 {
 }
 
 ExtendedEventPattern::ExtendedEventPattern(const QString& name, const EventPattern& startPattern, const EventPattern& endPattern,
-    const EventPattern& altEndPattern) :
+    const EventPattern& altEndPattern, const IMatchableEventPattern::Color& successColor, const IMatchableEventPattern::Color& altColor) :
     StartPattern(startPattern),
     EndPattern(endPattern),
-    AltEndPattern(altEndPattern)
+    AltEndPattern(altEndPattern),
+    SuccessEndColor(successColor),
+    AltEndColor(altColor)
 {
     Name = name;
 }
@@ -46,12 +50,12 @@ bool ExtendedEventPattern::IsPatternMatched(const QString& line) const
 {
     return
         IsStartPatternMatched(line) ||
-        IsEndPatternMatched(line);
+        IsEndOrAltPatternMatched(line);
 }
 
 std::unique_ptr<IMatchableEventPattern> ExtendedEventPattern::Clone() const
 {
-    return std::make_unique<ExtendedEventPattern>(Name, StartPattern, EndPattern, AltEndPattern);
+    return std::make_unique<ExtendedEventPattern>(Name, StartPattern, EndPattern, AltEndPattern, SuccessEndColor, AltEndColor);
 }
 
 EventType ExtendedEventPattern::GetType() const
@@ -64,11 +68,21 @@ bool ExtendedEventPattern::IsStartPatternMatched(const QString& line) const
     return m_lineMatcher.IsPatternMatched(line, StartPattern);
 }
 
-bool ExtendedEventPattern::IsEndPatternMatched(const QString& line) const
+bool ExtendedEventPattern::IsEndOrAltPatternMatched(const QString& line) const
 {
     return
         m_lineMatcher.IsPatternMatched(line, EndPattern) ||
         m_lineMatcher.IsPatternMatched(line, AltEndPattern);
+}
+
+bool ExtendedEventPattern::IsEndPatternMatched(const QString& line) const
+{
+    return m_lineMatcher.IsPatternMatched(line, EndPattern);
+}
+
+bool ExtendedEventPattern::IsAltPatternMatched(const QString& line) const
+{
+    return m_lineMatcher.IsPatternMatched(line, AltEndPattern);
 }
 
 EventPatterns::EventPatterns()
@@ -177,20 +191,23 @@ int EventPatternsHierarchyMatcher::GetLevelInHierarchy(const QString& line) cons
     return -1;
 }
 
-IMatchableEventPatternPtr CreateSingleEventPattern(QString const& name, const EventPattern& pattern)
+IMatchableEventPatternPtr CreateSingleEventPattern(QString const& name, const EventPattern& pattern, const IMatchableEventPattern::Color& color)
 {
-    return std::make_unique<SingleEventPattern>(name, pattern);
-}
-
-IMatchableEventPatternPtr CreateExtendedEventPattern(QString const& name, const EventPattern& startPattern, const EventPattern& endPattern)
-{
-    return std::make_unique<ExtendedEventPattern>(name, startPattern, endPattern);
+    return std::make_unique<SingleEventPattern>(name, pattern, color);
 }
 
 IMatchableEventPatternPtr CreateExtendedEventPattern(QString const& name, const EventPattern& startPattern, const EventPattern& endPattern,
-                                       const EventPattern& altEndPattern)
+                                                     const IMatchableEventPattern::Color& color)
 {
-    return std::make_unique<ExtendedEventPattern>(name, startPattern, endPattern, altEndPattern);
+    return std::make_unique<ExtendedEventPattern>(name, startPattern, endPattern, color);
+}
+
+IMatchableEventPatternPtr CreateExtendedEventPattern(
+        QString const& name, const EventPattern& startPattern, const EventPattern& endPattern,
+        const EventPattern& altEndPattern,
+        const IMatchableEventPattern::Color& successColor, const IMatchableEventPattern::Color& altColor)
+{
+    return std::make_unique<ExtendedEventPattern>(name, startPattern, endPattern, altEndPattern, successColor, altColor);
 }
 
 void EventPatternsHierarchy::AddEventPattern(IMatchableEventPatternPtr event)
@@ -237,6 +254,7 @@ void FindSingleEventInRange(SingleEventPattern const& pattern, IPositionedLinesS
             event.FoundEvent.StartLine = event.FoundEvent.EndLine = lines[i];
             event.FoundEvent.StartLine.Position.Number = event.FoundEvent.EndLine.Position.Number = i;
             event.FoundEvent.Group = eventGroupExtractor.GetGroupFromLine(event.FoundEvent.StartLine);
+            event.FoundEvent.ViewColor = pattern.ViewColor;
             event.FoundEventStartLocation = event.FoundEventEndLocation = i;
 
             events.push_back(event);
@@ -267,7 +285,7 @@ void FindExtendedEventInRange(ExtendedEventPattern const& pattern, IPositionedLi
             continue;
         }
 
-        if (pattern.IsEndPatternMatched(positionedLineToProc.Line))
+        if (pattern.IsEndOrAltPatternMatched(positionedLineToProc.Line))
         {
             const auto group = eventGroupExtractor.GetGroupFromLine(positionedLineToProc);
             for (std::vector<LocatedEvent>::reverse_iterator iter = events.rbegin(); iter != events.rend(); ++iter)
@@ -277,6 +295,15 @@ void FindExtendedEventInRange(ExtendedEventPattern const& pattern, IPositionedLi
                     iter->FoundEvent.EndLine = positionedLineToProc;
                     iter->FoundEvent.EndLine.Position.Number = i;
                     iter->FoundEventEndLocation = i;
+
+                    if (pattern.IsAltPatternMatched(positionedLineToProc.Line))
+                    {
+                        iter->FoundEvent.ViewColor = pattern.AltEndColor;
+                    }
+                    else
+                    {
+                        iter->FoundEvent.ViewColor = pattern.SuccessEndColor;
+                    }
 
                     break;
                 }
@@ -501,4 +528,15 @@ EventHierarchyInfoForLines GetHierarchyInfoForLines(const IPositionedLinesStorag
     }
 
     return result;
+}
+
+IMatchableEventPattern::Color CreateColor(const quint8 R, const quint8 G, const quint8 B)
+{
+    IMatchableEventPattern::Color color;
+
+    color.R = R;
+    color.G = G;
+    color.B = B;
+
+    return color;
 }

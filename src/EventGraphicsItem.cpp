@@ -30,10 +30,12 @@ void EventGraphicsItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*
     const int xSpace = 5;
     const int ySpace = 7;
 
-    QColor color(Qt::green);
+    QColor color(m_event.ViewColor.R, m_event.ViewColor.G, m_event.ViewColor.B);
     const auto currentRect = rect();
 
     painter->setPen(QPen(Qt::black, 1));
+//    painter->drawLine(-10, currentRect.y(), 5000, currentRect.y());
+
     painter->setBrush(QBrush(color));
     painter->drawRect(currentRect);
 
