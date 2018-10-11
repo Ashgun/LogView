@@ -10,6 +10,25 @@
 #include "Events.h"
 #include "IPositionedLinesStorage.h"
 
+namespace ViewParams
+{
+
+const int BaseVerticalSkip = 15;
+const int BaseEventHeight = 15;
+
+const int VerticalSpace = 3;
+
+const int BaseHorizontalSkip = 5;
+
+} // namespace ViewParams
+
+namespace
+{
+
+
+
+} // namespace
+
 LogViewMainWindow::LogViewMainWindow(
         IPositionedLinesStorage& linesStorage,
         const std::vector<std::vector<Event>>& eventLevels,
@@ -18,12 +37,14 @@ LogViewMainWindow::LogViewMainWindow(
 {
     qRegisterMetaType<Event>("Event");
 
-    const int baseY = 15;
-    const int baseHeight = 15;
     std::size_t linesCount = linesStorage.Size();
 
     gui_EventsViewScene = new EventsGraphicsScene(this);
-    gui_EventsViewScene->setSceneRect(0, 0, width() * 2, linesCount * baseHeight + baseHeight + 2 * baseY);
+    gui_EventsViewScene->setSceneRect(
+                0, 0,
+                width() * 2,
+                (linesCount + 1) * (ViewParams::BaseEventHeight + ViewParams::VerticalSpace) +
+                    2 * ViewParams::BaseVerticalSkip);
 
     gui_EventsView = new QGraphicsView();
     gui_EventsView->setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -37,54 +58,69 @@ LogViewMainWindow::LogViewMainWindow(
 
     setCentralWidget(gui_EventsView);
 
+    std::vector<std::vector<std::size_t>> eventGroupIndexes(eventLevels.size());
+    std::vector<std::size_t> overlappedGroupsCountForLevel(eventLevels.size(), 0);
+    std::size_t maxGroupsCount = 0;
 
-//    gui_EventsViewScene->addItem(new CustomItem(20, 20, 60, 60));
-//    gui_EventsViewScene->addItem(new CustomItem(30, 30, 60, 60));
-//    gui_EventsViewScene->addItem(new CustomItem(40, 40, 60, 60));
-
-//    Event event;
-//    event.Name = "event1";
-//    event.Level = 0;
-//    gui_EventsViewScene->addItem(new EventGraphicsItem(event, 20, 20, 100, 50, *gui_EventsViewScene));
-
-//    event.Name = "Event2q";
-//    event.Level = 1;
-//    gui_EventsViewScene->addItem(new EventGraphicsItem(event, 30, 25, 60, 30, *gui_EventsViewScene));
-
-
-    std::vector<std::map<QString, std::size_t>> groupIndixes(eventLevels.size());
-
-    for (std::size_t level = 0; level < eventLevels.size(); ++level)
     {
-        std::map<QString, std::size_t>& groups = groupIndixes[level];
-        if (level > 1)
+        std::vector<std::vector<std::set<QString>>> crossedEventGroups(eventLevels.size());
+
+        for (std::size_t level = 0; level < eventLevels.size(); ++level)
         {
-            groups = groupIndixes[level - 1];
-        }
-        for (std::size_t i = 0; i < eventLevels[level].size(); ++i)
-        {
-            if (groups.find(eventLevels[level][i].Group) == groups.end())
+            crossedEventGroups[level].resize(eventLevels[level].size());
+            for (std::size_t i = 0; i < eventLevels[level].size(); ++i)
             {
-                const std::size_t groupsCount = groups.size();
-                groups[eventLevels[level][i].Group] = groupsCount;
+                for (std::size_t j = 0; j < eventLevels[level].size(); ++j)
+                {
+                    if (IsEventsOverlapped(eventLevels[level][i], eventLevels[level][j]))
+                    {
+                        crossedEventGroups[level][i].insert(eventLevels[level][j].Group);
+                    }
+                }
+            }
+
+            eventGroupIndexes[level].resize(eventLevels[level].size());
+            for (std::size_t i = 0; i < eventLevels[level].size(); ++i)
+            {
+                if (overlappedGroupsCountForLevel[level] < crossedEventGroups[level][i].size())
+                {
+                    overlappedGroupsCountForLevel[level] = crossedEventGroups[level][i].size();
+
+                    if (maxGroupsCount < overlappedGroupsCountForLevel[level])
+                    {
+                        maxGroupsCount = overlappedGroupsCountForLevel[level];
+                    }
+                }
+
+                std::size_t index = 0;
+                for (const auto& group : crossedEventGroups[level][i])
+                {
+                    if (eventLevels[level][i].Group == group)
+                    {
+                        eventGroupIndexes[level][i] = index;
+                    }
+                    ++index;
+                }
             }
         }
 
+        crossedEventGroups.size();
+    }
+
+    for (std::size_t level = 0; level < eventLevels.size(); ++level)
+    {
         for (std::size_t i = 0; i < eventLevels[level].size(); ++i)
         {
-            const std::size_t groupIndex = groups[eventLevels[level][i].Group];
+            const std::size_t groupIndex = eventGroupIndexes[level][i];
 
-            const int verticalSpace = 2;
-
-            const int baseX = 5;
-
-            const qreal y = eventLevels[level][i].StartLine.Position.Number * baseHeight + baseY;
+            const qreal y = eventLevels[level][i].StartLine.Position.Number * ViewParams::BaseEventHeight + ViewParams::BaseVerticalSkip;
             const qreal height =
-                    (eventLevels[level][i].EndLine.Position.Number - eventLevels[level][i].StartLine.Position.Number) * baseHeight +
-                    baseHeight - verticalSpace;
+                    (eventLevels[level][i].EndLine.Position.Number -
+                     eventLevels[level][i].StartLine.Position.Number) * ViewParams::BaseEventHeight +
+                    ViewParams::BaseEventHeight - ViewParams::VerticalSpace;
 
-            const qreal groupViewWidth = gui_EventsViewScene->width() / groups.size();
-            const qreal shiftX = baseX + eventLevels[level][i].Level * baseX;
+            const qreal groupViewWidth = gui_EventsViewScene->width() / overlappedGroupsCountForLevel[level];
+            const qreal shiftX = ViewParams::BaseHorizontalSkip + eventLevels[level][i].Level * ViewParams::BaseHorizontalSkip;
             const qreal x = shiftX + groupViewWidth * groupIndex;
             const qreal width = groupViewWidth - 2 * shiftX;
 
