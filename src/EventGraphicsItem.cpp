@@ -3,13 +3,21 @@
 #include <QPainter>
 #include <QtDebug>
 
+namespace ItemViewParams
+{
+
+const int xSpace = 5;
+const int ySpace = 7;
+
+} // namespace ItemViewParams
+
 EventGraphicsItem::EventGraphicsItem(const Event& event, qreal x, qreal y, qreal w, qreal h,
                                      IEventGraphicsItemSelectionCallback& selectionCallback) :
-    QGraphicsRectItem (x, y, w, h),
+    QGraphicsRectItem (x, y - ItemViewParams::ySpace, w, h + ItemViewParams::ySpace),
     m_event(event),
     m_selectionCallback(selectionCallback)
 {
-    setRect(x, y, w, h);
+    setRect(x, y - ItemViewParams::ySpace, w, h + ItemViewParams::ySpace);
     setZValue(m_event.Level);
 }
 
@@ -27,9 +35,6 @@ void EventGraphicsItem::mousePressEvent(QGraphicsSceneMouseEvent* /*event*/)
 
 void EventGraphicsItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /*option*/, QWidget* /*widget*/)
 {
-    const int xSpace = 5;
-    const int ySpace = 7;
-
     QColor color(m_event.ViewColor.R, m_event.ViewColor.G, m_event.ViewColor.B);
     const auto currentRect = rect();
 
@@ -41,12 +46,12 @@ void EventGraphicsItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*
 
     painter->setPen(QPen(Qt::black, 1));
     painter->setBrush(QBrush(Qt::white));
-    const QRectF namePlaceRect(currentRect.x() + xSpace, currentRect.y() - ySpace,
-                               currentRect.width() - 2 * xSpace, 2 * ySpace);
+    const QRectF namePlaceRect(currentRect.x() + ItemViewParams::xSpace, currentRect.y() - ItemViewParams::ySpace,
+                               currentRect.width() - 2 * ItemViewParams::xSpace, 2 * ItemViewParams::ySpace);
     painter->drawRect(namePlaceRect);
 
 //    QColor invertedColor(255 - color.red(), 255 - color.green(), 255 - color.blue());
 //    painter->setPen(QPen(invertedColor, 1));
-    QPointF pos = QPointF(namePlaceRect.x() + xSpace, namePlaceRect.y() + 1.5 * ySpace);
+    QPointF pos = QPointF(namePlaceRect.x() + ItemViewParams::xSpace, namePlaceRect.y() + 1.5 * ItemViewParams::ySpace);
     painter->drawText(pos, m_event.Name);
 }

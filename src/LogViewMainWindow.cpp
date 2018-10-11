@@ -5,10 +5,14 @@
 
 #include <QDebug>
 
+#include "BaseLinePositionStorage.h"
+#include "BasePositionedLinesStorage.h"
 #include "CustomItem.h"
 #include "EventGraphicsItem.h"
 #include "Events.h"
+#include "FilesIndexer.h"
 #include "IPositionedLinesStorage.h"
+#include "RegExpLogLineParser.h"
 
 namespace ViewParams
 {
@@ -24,6 +28,27 @@ const int BaseHorizontalSkip = 7;
 
 namespace
 {
+
+class EventGroupExtractor : public IEventGroupExtractor
+{
+public:
+    explicit EventGroupExtractor(QVector<QPair<QString, QString>> const& headerRegExps, QString const& groupName) :
+        m_groupName(groupName)
+    {
+        QString groupRegExp("");
+        m_lineParser.reset(new RegExpLogLineParser(headerRegExps, groupRegExp));
+    }
+
+    QString GetGroupFromLine(const PositionedLine& line) const override
+    {
+        LogLineInfo info = m_lineParser->Parse(line.Line);
+        return info.HeaderItems[m_groupName];
+    }
+
+private:
+    std::unique_ptr<ILogLineParser> m_lineParser;
+    QString const m_groupName;
+};
 
 std::list<EventGraphicsItem*> GenerateEventViewItems(
         const std::vector<std::vector<Event>>& eventLevels,
@@ -110,22 +135,12 @@ std::list<EventGraphicsItem*> GenerateEventViewItems(
 
 } // namespace
 
-LogViewMainWindow::LogViewMainWindow(
-        IPositionedLinesStorage& linesStorage,
-        const std::vector<std::vector<Event>>& eventLevels,
-        QWidget *parent) :
+LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
     QMainWindow(parent)
 {
     qRegisterMetaType<Event>("Event");
 
-    std::size_t linesCount = linesStorage.Size();
-
     gui_EventsViewScene = new EventsGraphicsScene(this);
-    gui_EventsViewScene->setSceneRect(
-                0, 0,
-                width() * 2,
-                (linesCount + 1) * (ViewParams::BaseEventHeight + ViewParams::VerticalSpace) +
-                    2 * ViewParams::BaseVerticalSkip);
 
     gui_EventsView = new QGraphicsView();
     gui_EventsView->setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -139,9 +154,69 @@ LogViewMainWindow::LogViewMainWindow(
 
     setCentralWidget(gui_EventsView);
 
+
+    CreateActions();
+    CreateMenuBar();
+    CreateConnetions();
+}
+
+void LogViewMainWindow::LoadLog(const QString& filename)
+{
+    BaseLinePositionStorage linePositionStorage;
+    BasePositionedLinesStorage positionedLinesStorage;
+
+    EventPatternsHierarchyMatcher lineSelector;
+    lineSelector.EventPatterns.AddEventPattern(
+        CreateExtendedEventPattern("Service works",
+            EventPattern::CreateStringPattern("Logging started"),
+            EventPattern::CreateStringPattern("Logging finished"),
+            CreateColor(128, 128, 128)));
+    lineSelector.EventPatterns.TopLevelNodes.back().AddSubEventPattern(
+        CreateSingleEventPattern("Accounts list obtained",
+            EventPattern::CreateStringPattern("[AccountRegistry] New accounts list obtained"),
+            CreateColor(128, 128, 0)));
+    lineSelector.EventPatterns.TopLevelNodes.back().AddSubEventPattern(
+                CreateExtendedEventPattern("Tenant backup",
+                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session started"),
+                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed successfully"),
+                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed with errors"),
+                    CreateColor(0, 128, 0), CreateColor(128, 0, 0)));
+    lineSelector.EventPatterns.TopLevelNodes.back().SubEvents.back().AddSubEventPattern(
+                CreateExtendedEventPattern("Mailbox backup",
+                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was started"),
+                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was finished"),
+                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was failed"),
+                    CreateColor(0, 255, 0), CreateColor(255, 0, 0)));
+
+    FilesIndexer indexer(linePositionStorage, positionedLinesStorage, lineSelector);
+    indexer.AddFileIndexes(filename);
+
+    QVector<QPair<QString, QString>> headerRegExps;
+    headerRegExps.push_back(QPair<QString, QString>("DateTime", "\\[([0-9_\\./\\-\\s:]+)\\]\\s*"));
+    headerRegExps.push_back(QPair<QString, QString>("LogLevel", "\\[([TILDWEF]){1,1}\\]\\s*"));
+    headerRegExps.push_back(QPair<QString, QString>("ThreadId", "\\[([x0-9]+)\\]\\s*"));
+
+    EventGroupExtractor eventGroupExtractor(headerRegExps, "ThreadId");
+
+    std::vector<std::vector<Event>> eventLevels = FindEvents(
+        lineSelector.EventPatterns, positionedLinesStorage, eventGroupExtractor);
+
+    LoadLogView(positionedLinesStorage, eventLevels);
+}
+
+void LogViewMainWindow::LoadLogView(IPositionedLinesStorage& linesStorage, const std::vector<std::vector<Event> >& eventLevels)
+{
+    std::size_t linesCount = linesStorage.Size();
+    gui_EventsViewScene->setSceneRect(
+                0, 0,
+                gui_EventsView->width() - 15,
+                (linesCount + 1) * (ViewParams::BaseEventHeight + ViewParams::VerticalSpace) +
+                2 * ViewParams::BaseVerticalSkip);
+
     std::list<EventGraphicsItem*> eventsToView =
             GenerateEventViewItems(eventLevels, gui_EventsViewScene->width(), *gui_EventsViewScene);
 
+    gui_EventsViewScene->clear();
     for (auto& eventViewItem : eventsToView)
     {
         gui_EventsViewScene->addItem(eventViewItem);
@@ -151,10 +226,6 @@ LogViewMainWindow::LogViewMainWindow(
     gui_EventsView->horizontalScrollBar()->setValue(gui_EventsView->horizontalScrollBar()->minimum());
     gui_EventsView->verticalScrollBar()->setValue(gui_EventsView->verticalScrollBar()->minimum());
     gui_EventsView->centerOn(0, 0);
-
-    connect(gui_EventsViewScene, SIGNAL(EventSelected(Event)),
-            this, SLOT(slot_EventSelected(Event)),
-            Qt::QueuedConnection);
 }
 
 void LogViewMainWindow::slot_EventSelected(Event event)
@@ -170,4 +241,36 @@ void LogViewMainWindow::slot_EventSelected(Event event)
         qDebug() << event.StartLine.Line;
         qDebug() << event.EndLine.Line;
     }
+}
+
+void LogViewMainWindow::slot_act_openFileTriggred()
+{
+    LoadLog("log1.log");
+}
+
+void LogViewMainWindow::CreateActions()
+{
+    act_openFile = new QAction("&Open log file");
+}
+
+void LogViewMainWindow::CreateMenuBar()
+{
+    gui_mainMenuBar = new QMenuBar;
+
+    QMenu* fileMenu = new QMenu("&File");
+    fileMenu->addAction(act_openFile);
+
+    gui_mainMenuBar->addMenu(fileMenu);
+
+    setMenuBar(gui_mainMenuBar);
+}
+
+void LogViewMainWindow::CreateConnetions()
+{
+    connect(gui_EventsViewScene, SIGNAL(EventSelected(Event)),
+            this, SLOT(slot_EventSelected(Event)),
+            Qt::QueuedConnection);
+
+    connect(act_openFile, SIGNAL(triggered()),
+            this, SLOT(slot_act_openFileTriggred()), Qt::DirectConnection);
 }
