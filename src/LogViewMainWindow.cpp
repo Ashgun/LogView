@@ -18,45 +18,19 @@ const int BaseEventHeight = 15;
 
 const int VerticalSpace = 3;
 
-const int BaseHorizontalSkip = 5;
+const int BaseHorizontalSkip = 7;
 
 } // namespace ViewParams
 
 namespace
 {
 
-
-
-} // namespace
-
-LogViewMainWindow::LogViewMainWindow(
-        IPositionedLinesStorage& linesStorage,
+std::list<EventGraphicsItem*> GenerateEventViewItems(
         const std::vector<std::vector<Event>>& eventLevels,
-        QWidget *parent) :
-    QMainWindow(parent)
+        const qreal viewSceneWidth,
+        IEventGraphicsItemSelectionCallback& selectionCallback)
 {
-    qRegisterMetaType<Event>("Event");
-
-    std::size_t linesCount = linesStorage.Size();
-
-    gui_EventsViewScene = new EventsGraphicsScene(this);
-    gui_EventsViewScene->setSceneRect(
-                0, 0,
-                width() * 2,
-                (linesCount + 1) * (ViewParams::BaseEventHeight + ViewParams::VerticalSpace) +
-                    2 * ViewParams::BaseVerticalSkip);
-
-    gui_EventsView = new QGraphicsView();
-    gui_EventsView->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-    gui_EventsView->setScene(gui_EventsViewScene);
-
-//    QHBoxLayout* layout = new QHBoxLayout();
-//    layout->addWidget(gui_EventsView);
-//    setLayout(layout);
-
-//    layout()->addWidget(gui_EventsView);
-
-    setCentralWidget(gui_EventsView);
+    std::list<EventGraphicsItem*> eventsToView;
 
     std::vector<std::vector<std::size_t>> eventGroupIndexes(eventLevels.size());
     std::vector<std::size_t> overlappedGroupsCountForLevel(eventLevels.size(), 0);
@@ -119,19 +93,60 @@ LogViewMainWindow::LogViewMainWindow(
                      eventLevels[level][i].StartLine.Position.Number) * ViewParams::BaseEventHeight +
                     ViewParams::BaseEventHeight - ViewParams::VerticalSpace;
 
-            const qreal groupViewWidth = gui_EventsViewScene->width() / overlappedGroupsCountForLevel[level];
+            const qreal groupViewWidth = viewSceneWidth / overlappedGroupsCountForLevel[level];
             const qreal shiftX = ViewParams::BaseHorizontalSkip + eventLevels[level][i].Level * ViewParams::BaseHorizontalSkip;
             const qreal x = shiftX + groupViewWidth * groupIndex;
             const qreal width = groupViewWidth - 2 * shiftX;
 
-            gui_EventsViewScene->addItem(
-                        new EventGraphicsItem(
-                            eventLevels[level][i],
-                            x, y, width, height,
-                            *gui_EventsViewScene)
-                        );
+            eventsToView.push_back(new EventGraphicsItem(
+                                       eventLevels[level][i],
+                                       x, y, width, height,
+                                       selectionCallback));
         }
     }
+
+    return eventsToView;
+}
+
+} // namespace
+
+LogViewMainWindow::LogViewMainWindow(
+        IPositionedLinesStorage& linesStorage,
+        const std::vector<std::vector<Event>>& eventLevels,
+        QWidget *parent) :
+    QMainWindow(parent)
+{
+    qRegisterMetaType<Event>("Event");
+
+    std::size_t linesCount = linesStorage.Size();
+
+    gui_EventsViewScene = new EventsGraphicsScene(this);
+    gui_EventsViewScene->setSceneRect(
+                0, 0,
+                width() * 2,
+                (linesCount + 1) * (ViewParams::BaseEventHeight + ViewParams::VerticalSpace) +
+                    2 * ViewParams::BaseVerticalSkip);
+
+    gui_EventsView = new QGraphicsView();
+    gui_EventsView->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+    gui_EventsView->setScene(gui_EventsViewScene);
+
+//    QHBoxLayout* layout = new QHBoxLayout();
+//    layout->addWidget(gui_EventsView);
+//    setLayout(layout);
+
+//    layout()->addWidget(gui_EventsView);
+
+    setCentralWidget(gui_EventsView);
+
+    std::list<EventGraphicsItem*> eventsToView =
+            GenerateEventViewItems(eventLevels, gui_EventsViewScene->width(), *gui_EventsViewScene);
+
+    for (auto& eventViewItem : eventsToView)
+    {
+        gui_EventsViewScene->addItem(eventViewItem);
+    }
+    eventsToView.clear();
 
     gui_EventsView->horizontalScrollBar()->setValue(gui_EventsView->horizontalScrollBar()->minimum());
     gui_EventsView->verticalScrollBar()->setValue(gui_EventsView->verticalScrollBar()->minimum());
