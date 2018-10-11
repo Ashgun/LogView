@@ -312,24 +312,6 @@ private:
     QString const m_groupName;
 };
 
-class ThreadIdEventGroupExtractor : public EventGroupExtractor
-{
-private:
-    static QVector<QPair<QString, QString>> CreateHeaderRegExps()
-    {
-        QVector<QPair<QString, QString>> headerRegExps;
-        headerRegExps.push_back(QPair<QString, QString>("DateTime", "\\[([0-9_\\./\\-\\s:]+)\\]\\s*"));
-        headerRegExps.push_back(QPair<QString, QString>("LogLevel", "\\[([TILDWEF]){1,1}\\]\\s*"));
-        headerRegExps.push_back(QPair<QString, QString>("ThreadId", "\\[([x0-9]+)\\]\\s*"));
-
-        return headerRegExps;
-    }
-public:
-    ThreadIdEventGroupExtractor() : EventGroupExtractor(CreateHeaderRegExps(), "ThreadId")
-    {
-    }
-};
-
 #include "LogViewMainWindow.h"
 
 int RunAll(int argc, char *argv[])
@@ -339,133 +321,6 @@ int RunAll(int argc, char *argv[])
 
     LogViewMainWindow window;
     window.showMaximized();
-
-    return a.exec();
-}
-
-void FilesIndexer_Test()
-{
-    BaseLinePositionStorage linePositionStorage;
-    BasePositionedLinesStorage positionedLinesStorage;
-
-    EventPatternsHierarchyMatcher lineSelector;
-    lineSelector.EventPatterns.AddEventPattern(
-        CreateExtendedEventPattern("Service works",
-            EventPattern::CreateStringPattern("Logging started"),
-            EventPattern::CreateStringPattern("Logging finished"),
-            CreateColor(128, 128, 128)));
-    lineSelector.EventPatterns.TopLevelNodes.back().AddSubEventPattern(
-        CreateSingleEventPattern("Accounts list obtained",
-            EventPattern::CreateStringPattern("[AccountRegistry] New accounts list obtained"),
-            CreateColor(128, 128, 0)));
-    lineSelector.EventPatterns.TopLevelNodes.back().AddSubEventPattern(
-                CreateExtendedEventPattern("Tenant backup",
-                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session started"),
-                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed successfully"),
-                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed with errors"),
-                    CreateColor(0, 128, 0), CreateColor(128, 0, 0)));
-    lineSelector.EventPatterns.TopLevelNodes.back().SubEvents.back().AddSubEventPattern(
-                CreateExtendedEventPattern("Mailbox backup",
-                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was started"),
-                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was finished"),
-                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was failed"),
-                    CreateColor(0, 255, 0), CreateColor(255, 0, 0)));
-
-    FilesIndexer indexer(linePositionStorage, positionedLinesStorage, lineSelector);
-    indexer.AddFileIndexes("log1.log");
-
-    LinePosition pos;
-    pos = linePositionStorage[0];
-    pos = linePositionStorage[1];
-    pos = linePositionStorage[2];
-
-    qDebug() << linePositionStorage.Size();
-    for (int i = 0; i < 3; ++i)
-    {
-        LinePosition pos = linePositionStorage[i];
-
-        qDebug() << i << pos.Offset;
-    }
-
-    qDebug() << positionedLinesStorage.Size();
-//    for (std::size_t i = 0; i < positionedLinesStorage.Size(); ++i)
-//    {
-//        PositionedLine const& line = positionedLinesStorage[i];
-
-//        qDebug() << i << line.Position.Offset << line.LevelInHierarchy << line.Line;
-//    }
-
-    QString groupRegExp("");
-    QVector<QPair<QString, QString>> headerRegExps;
-    headerRegExps.push_back(QPair<QString, QString>("DateTime", "\\[([0-9_\\./\\-\\s:]+)\\]\\s*"));
-    headerRegExps.push_back(QPair<QString, QString>("LogLevel", "\\[([TILDWEF]){1,1}\\]\\s*"));
-    headerRegExps.push_back(QPair<QString, QString>("ThreadId", "\\[([x0-9]+)\\]\\s*"));
-
-    std::unique_ptr<ILogLineParser> lineParser(new RegExpLogLineParser(headerRegExps, groupRegExp));
-    SplittedIndexesMap const splittedIndexesMap = SplitLinesByHeaderField(positionedLinesStorage, "ThreadId", *lineParser);
-
-    std::vector<std::vector<Event>> allEvents;
-    allEvents.reserve(10);
-    ThreadIdEventGroupExtractor const threadIdEventGroupExtractor;
-    for (auto const& data : splittedIndexesMap)
-    {
-//        qDebug() << data.first;
-
-        SplittedPositionedLinesStorage splittedPositionedLinesStorage(positionedLinesStorage, data.second);
-        std::vector<std::vector<Event>> eventLevels = FindEvents(lineSelector.EventPatterns, splittedPositionedLinesStorage,
-                                                                 threadIdEventGroupExtractor);
-
-        if (allEvents.size() < eventLevels.size())
-        {
-            allEvents.resize(eventLevels.size());
-        }
-
-        for (std::size_t level = 0; level < eventLevels.size(); ++level)
-        {
-            std::copy(eventLevels[level].begin(), eventLevels[level].end(), std::back_inserter(allEvents[level]));
-        }
-
-//        qDebug() << eventLevels.size();
-//        for (auto const& eventLevel : eventLevels)
-//        {
-//            qDebug() << "-" << eventLevel.size();
-
-////            for (auto const& event : eventLevel)
-////            {
-////                qDebug() << event.Name << event.StartLine.Line;
-////            }
-//        }
-    }
-
-    qDebug() << allEvents.size();
-    for (auto const& eventLevel : allEvents)
-    {
-        qDebug() << "-" << eventLevel.size();
-
-//            for (auto const& event : eventLevel)
-//            {
-//                qDebug() << event.Name << event.StartLine.Line;
-//            }
-    }
-
-    EventsHierarchy eventsHierarchy;
-    AddEventsToEventsHierarchy(allEvents, eventsHierarchy);
-
-
-}
-
-#include "LogViewMainWindow.h"
-
-int LogViewMainWindow_Test(int argc, char *argv[])
-{
-    QApplication a(argc, argv);
-
-    std::vector<std::vector<Event>> levels;
-    BasePositionedLinesStorage positionedLinesStorage;
-    LogViewMainWindow window;
-    window.showMaximized();
-
-    window.LoadLogView(positionedLinesStorage, levels);
 
     return a.exec();
 }
@@ -482,11 +337,8 @@ int main(int argc, char *argv[])
 //    tests::ParsingTest03();
 
 //    ILogLineParser_Test();
-//    FilesIndexer_Test();
 
     RunAll(argc, argv);
-
-//    LogViewMainWindow_Test(argc, argv);
 
     std::cout << "Finish" << std::endl;
 

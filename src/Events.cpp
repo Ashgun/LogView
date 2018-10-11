@@ -446,16 +446,6 @@ int CheckEventsOrder(const Event& l, const Event& r)
     return 1;
 }
 
-void AddEventsToEventsHierarchy(const std::vector<std::vector<Event>>& /*splittedToLevelsEvents*/, EventsHierarchy& /*targetHierarchy*/)
-{
-//    for (std::size_t level = 0; level < splittedToLevelsEvents.size(); ++level)
-//    {
-//        std::vector<Event> const& eventsLevel = splittedToLevelsEvents[level];
-
-
-//    }
-}
-
 bool Event::operator==(const Event& other) const
 {
     return
@@ -472,43 +462,6 @@ bool operator<(const Event& lhs, const Event& rhs)
 }
 
 #include <QDebug>
-
-GroupedSubEventsLinksHierarchy LinkEventsToHierarchy(const std::vector<std::vector<Event> >& eventLevels)
-{
-    GroupedSubEventsLinksHierarchy linksHierarchy(eventLevels.size() - 1);
-    for (std::size_t currentLevelNum = 0; currentLevelNum < eventLevels.size() - 1; ++currentLevelNum)
-    {
-        std::vector<Event> const& currentLevel = eventLevels[currentLevelNum];
-        std::vector<Event> const& nextLevel = eventLevels[currentLevelNum + 1];
-        GroupedSubEventsLinksHierarchy::value_type& currentHierarchyLevel = linksHierarchy[currentLevelNum];
-        for (std::size_t currentLevelEventNum = 0; currentLevelEventNum < currentLevel.size(); ++currentLevelEventNum)
-        {
-            Event const& currentLevelEvent = currentLevel[currentLevelEventNum];
-
-            if (currentLevelEvent.Type == EventType::Single)
-            {
-                continue;
-            }
-
-            for (std::size_t nextLevelEventNum = 0; nextLevelEventNum < nextLevel.size(); ++nextLevelEventNum)
-            {
-                Event const& nextLevelEvent = nextLevel[nextLevelEventNum];
-
-                if (currentLevelNum > 0 && currentLevelEvent.Group != nextLevelEvent.Group)
-                {
-                    continue;
-                }
-
-                if (IsEventsOverlapped(currentLevelEvent, nextLevelEvent))
-                {
-                    currentHierarchyLevel[nextLevelEvent.Group].push_back(nextLevelEventNum);
-                }
-            }
-        }
-    }
-
-    return linksHierarchy;
-}
 
 EventHierarchyInfoForLines GetHierarchyInfoForLines(const IPositionedLinesStorage& positionedLinesStorage, const std::vector<std::vector<Event> >& eventLevels)
 {
