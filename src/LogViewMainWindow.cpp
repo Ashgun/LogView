@@ -139,6 +139,7 @@ LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
     QMainWindow(parent)
 {
     qRegisterMetaType<Event>("Event");
+    setMinimumSize(1024, 768);
 
     gui_EventsViewScene = new EventsGraphicsScene(this);
 
@@ -160,10 +161,12 @@ LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
     CreateConnetions();
 }
 
+LogViewMainWindow::~LogViewMainWindow() = default;
+
 void LogViewMainWindow::LoadLog(const QString& filename)
 {
     BaseLinePositionStorage linePositionStorage;
-    BasePositionedLinesStorage positionedLinesStorage;
+    m_linesStorage = std::make_unique<BasePositionedLinesStorage>();
 
     EventPatternsHierarchyMatcher lineSelector;
     lineSelector.EventPatterns.AddEventPattern(
@@ -188,7 +191,7 @@ void LogViewMainWindow::LoadLog(const QString& filename)
                     EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was failed"),
                     CreateColor(0, 255, 0), CreateColor(255, 0, 0)));
 
-    FilesIndexer indexer(linePositionStorage, positionedLinesStorage, lineSelector);
+    FilesIndexer indexer(linePositionStorage, *m_linesStorage, lineSelector);
     indexer.AddFileIndexes(filename);
 
     QVector<QPair<QString, QString>> headerRegExps;
@@ -198,34 +201,30 @@ void LogViewMainWindow::LoadLog(const QString& filename)
 
     EventGroupExtractor eventGroupExtractor(headerRegExps, "ThreadId");
 
-    std::vector<std::vector<Event>> eventLevels = FindEvents(
-        lineSelector.EventPatterns, positionedLinesStorage, eventGroupExtractor);
+    m_eventLevels = FindEvents(
+        lineSelector.EventPatterns, *m_linesStorage, eventGroupExtractor);
 
-    LoadLogView(positionedLinesStorage, eventLevels);
+    Invalidate();
 }
 
-void LogViewMainWindow::LoadLogView(IPositionedLinesStorage& linesStorage, const std::vector<std::vector<Event> >& eventLevels)
+void LogViewMainWindow::UpdateViewportParams()
 {
-    std::size_t linesCount = linesStorage.Size();
+    if (m_linesStorage == nullptr)
+    {
+        return;
+    }
+
+    std::size_t linesCount = m_linesStorage->Size();
     gui_EventsViewScene->setSceneRect(
                 0, 0,
                 gui_EventsView->width() - 15,
-                (linesCount + 1) * (ViewParams::BaseEventHeight + ViewParams::VerticalSpace) +
+                (linesCount + 1) * (ViewParams::BaseEventHeight/* + ViewParams::VerticalSpace*/) +
                 2 * ViewParams::BaseVerticalSkip);
+}
 
-    std::list<EventGraphicsItem*> eventsToView =
-            GenerateEventViewItems(eventLevels, gui_EventsViewScene->width(), *gui_EventsViewScene);
-
-    gui_EventsViewScene->clear();
-    for (auto& eventViewItem : eventsToView)
-    {
-        gui_EventsViewScene->addItem(eventViewItem);
-    }
-    eventsToView.clear();
-
-    gui_EventsView->horizontalScrollBar()->setValue(gui_EventsView->horizontalScrollBar()->minimum());
-    gui_EventsView->verticalScrollBar()->setValue(gui_EventsView->verticalScrollBar()->minimum());
-    gui_EventsView->centerOn(0, 0);
+void LogViewMainWindow::LoadLogView()
+{
+    Invalidate();
 }
 
 void LogViewMainWindow::slot_EventSelected(Event event)
@@ -246,6 +245,17 @@ void LogViewMainWindow::slot_EventSelected(Event event)
 void LogViewMainWindow::slot_act_openFileTriggred()
 {
     LoadLog("log1.log");
+}
+
+void LogViewMainWindow::Invalidate()
+{
+    UpdateViewportParams();
+    Redraw();
+}
+
+void LogViewMainWindow::resizeEvent(QResizeEvent* /*event*/)
+{
+    Invalidate();
 }
 
 void LogViewMainWindow::CreateActions()
@@ -273,4 +283,18 @@ void LogViewMainWindow::CreateConnetions()
 
     connect(act_openFile, SIGNAL(triggered()),
             this, SLOT(slot_act_openFileTriggred()), Qt::DirectConnection);
+}
+
+void LogViewMainWindow::Redraw()
+{
+    m_eventsToView = GenerateEventViewItems(m_eventLevels, gui_EventsViewScene->width(), *gui_EventsViewScene);
+    gui_EventsViewScene->clear();
+    for (auto& eventViewItem : m_eventsToView)
+    {
+        gui_EventsViewScene->addItem(eventViewItem);
+    }
+
+    gui_EventsView->horizontalScrollBar()->setValue(gui_EventsView->horizontalScrollBar()->minimum());
+    gui_EventsView->verticalScrollBar()->setValue(gui_EventsView->verticalScrollBar()->minimum());
+    gui_EventsView->centerOn(0, 0);
 }
