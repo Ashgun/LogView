@@ -493,3 +493,8 @@ IMatchableEventPattern::Color CreateColor(const quint8 R, const quint8 G, const 
 
     return color;
 }
+
+QColor IMatchableEventPattern::Color::toQColor() const
+{
+    return QColor(R, G, B);
+}

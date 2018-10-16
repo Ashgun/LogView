@@ -6,6 +6,7 @@
 #include <QGraphicsView>
 #include <QMenuBar>
 #include <QAction>
+#include <QTreeWidget>
 
 #include "EventsGraphicsScene.h"
 
@@ -48,6 +49,8 @@ private:
     QMenuBar* gui_mainMenuBar;
     QGraphicsView* gui_EventsView;
     EventsGraphicsScene* gui_EventsViewScene;
+
+    QTreeWidget* gui_selectedEventView;
 
     QAction* act_openFile;
 

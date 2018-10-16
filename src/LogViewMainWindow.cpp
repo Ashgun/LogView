@@ -1,7 +1,9 @@
 #include "LogViewMainWindow.h"
 
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QScrollBar>
+#include <QSplitter>
 
 #include <QDebug>
 
@@ -147,13 +149,43 @@ LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
     gui_EventsView->setAlignment(Qt::AlignLeft | Qt::AlignTop);
     gui_EventsView->setScene(gui_EventsViewScene);
 
-//    QHBoxLayout* layout = new QHBoxLayout();
-//    layout->addWidget(gui_EventsView);
-//    setLayout(layout);
+    gui_selectedEventView = new QTreeWidget();
+//    gui_selectedEventView->setColumnCount(2);
+    gui_selectedEventView->setHeaderLabels(QStringList() << tr("No.") << tr("Log line"));
+//    gui_selectedEventView->setStyleSheet("QTreeWidget { font-family: \"Helvetica\"; font-size: " + QString::number(11) + "pt; }");
 
-//    layout()->addWidget(gui_EventsView);
+    setStyleSheet("QSplitter::handle{background-color: black;}");
+    QSplitter* verticalSplitter = new QSplitter(Qt::Orientation::Vertical);
+    verticalSplitter->setHandleWidth(3);
 
-    setCentralWidget(gui_EventsView);
+    QWidget* viewWidget = new QWidget();
+    {
+        QHBoxLayout* viewLayout = new QHBoxLayout();
+        viewLayout->addWidget(gui_EventsView);
+
+        viewWidget->setLayout(viewLayout);
+    }
+
+    verticalSplitter->addWidget(viewWidget);
+
+    QWidget* selectedViewWidget = new QWidget();
+    {
+        QVBoxLayout* viewLayout = new QVBoxLayout();
+        viewLayout->addWidget(new QLabel(tr("Selected event:")));
+        viewLayout->addWidget(gui_selectedEventView);
+
+        selectedViewWidget->setLayout(viewLayout);
+    }
+    verticalSplitter->addWidget(selectedViewWidget);
+    verticalSplitter->setCollapsible(1, true);
+
+    setCentralWidget(verticalSplitter);
+//    QList<int> sizes;
+//    sizes.append(height() * 3/4);
+//    sizes.append(height() - height() * 3/4);
+//    verticalSplitter->setSizes(sizes);
+    verticalSplitter->setStretchFactor(0, 5);
+    verticalSplitter->setStretchFactor(1, 1);
 
 
     CreateActions();
@@ -229,16 +261,40 @@ void LogViewMainWindow::LoadLogView()
 
 void LogViewMainWindow::slot_EventSelected(Event event)
 {
-    qDebug() << "*** Event item clicked:" << event.Name;
+//    qDebug() << "*** Event item clicked:" << event.Name;
+    gui_selectedEventView->clear();
 
     if (event.Type == EventType::Single)
     {
-        qDebug() << event.StartLine.Line;
+//        qDebug() << event.StartLine.Line;
+        QTreeWidgetItem* item = new QTreeWidgetItem(
+                                    QStringList()
+                                        << QString::number(event.StartLine.Position.Number)
+                                        << event.StartLine.Line);
+        item->setBackgroundColor(1, event.ViewColor.toQColor());
+        gui_selectedEventView->addTopLevelItem(item);
     }
     else
     {
-        qDebug() << event.StartLine.Line;
-        qDebug() << event.EndLine.Line;
+//        qDebug() << event.StartLine.Line;
+//        qDebug() << event.EndLine.Line;
+
+        {
+            QTreeWidgetItem* item = new QTreeWidgetItem(
+                                        QStringList()
+                                            << QString::number(event.StartLine.Position.Number)
+                                            << event.StartLine.Line);
+            item->setBackgroundColor(1, event.ViewColor.toQColor());
+            gui_selectedEventView->addTopLevelItem(item);
+        }
+        {
+            QTreeWidgetItem* item = new QTreeWidgetItem(
+                                        QStringList()
+                                            << QString::number(event.EndLine.Position.Number)
+                                            << event.EndLine.Line);
+            item->setBackgroundColor(1, event.ViewColor.toQColor());
+            gui_selectedEventView->addTopLevelItem(item);
+        }
     }
 }
 

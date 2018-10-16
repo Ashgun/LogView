@@ -6,6 +6,7 @@
 
 #include <QString>
 
+#include <QColor>
 #include <list>
 #include <map>
 #include <memory>
@@ -26,6 +27,8 @@ public:
         quint8 R;
         quint8 G;
         quint8 B;
+
+        QColor toQColor() const;
     };
 
 public:
