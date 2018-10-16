@@ -48,6 +48,7 @@ void FilesIndexer::AddFileIndexes(const QString& filename)
 
             std::size_t previousEol = 0;
             std::size_t currentEol = 0;
+            std::size_t currentLineNumber = 0;
             for (std::size_t i = 0; i < readBytesCount; ++i)
             {
                 if (IsEndOfLineSymbol(bufferData[i]))
@@ -62,7 +63,7 @@ void FilesIndexer::AddFileIndexes(const QString& filename)
 
                     LinePosition const pos(
                                 static_cast<FileOffset>(bufferStartOffset + previousEol + m_fileIndex * 1 * 1024 * 1024 * 1024),
-                                m_fileIndex, m_linePositionStorage.Size());
+                                m_fileIndex, m_linePositionStorage.Size(), currentLineNumber++);
                     m_linePositionStorage.AddPosition(pos);
 
                     int const hierarchyLevel = m_lineSelector.GetLevelInHierarchy(line);

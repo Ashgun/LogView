@@ -252,7 +252,7 @@ void FindSingleEventInRange(SingleEventPattern const& pattern, IPositionedLinesS
             event.FoundEvent = CreateEventFromPattern(pattern);
             event.FoundEvent.Level = level;
             event.FoundEvent.StartLine = event.FoundEvent.EndLine = lines[i];
-            event.FoundEvent.StartLine.Position.Number = event.FoundEvent.EndLine.Position.Number = i;
+            event.FoundEvent.StartLine.Position.NumberInMatchedLines = event.FoundEvent.EndLine.Position.NumberInMatchedLines = i;
             event.FoundEvent.Group = eventGroupExtractor.GetGroupFromLine(event.FoundEvent.StartLine);
             event.FoundEvent.ViewColor = pattern.ViewColor;
             event.FoundEventStartLocation = event.FoundEventEndLocation = i;
@@ -276,7 +276,7 @@ void FindExtendedEventInRange(ExtendedEventPattern const& pattern, IPositionedLi
             event.FoundEvent = CreateEventFromPattern(pattern);
             event.FoundEvent.Level = level;
             event.FoundEvent.StartLine = positionedLineToProc;
-            event.FoundEvent.StartLine.Position.Number = i;
+            event.FoundEvent.StartLine.Position.NumberInMatchedLines = i;
             event.FoundEvent.Group = eventGroupExtractor.GetGroupFromLine(event.FoundEvent.StartLine);
             event.FoundEventStartLocation = i;
 
@@ -293,7 +293,7 @@ void FindExtendedEventInRange(ExtendedEventPattern const& pattern, IPositionedLi
                 if (iter->FoundEvent.Group == group && iter->FoundEvent.Type == EventType::Extended)
                 {
                     iter->FoundEvent.EndLine = positionedLineToProc;
-                    iter->FoundEvent.EndLine.Position.Number = i;
+                    iter->FoundEvent.EndLine.Position.NumberInMatchedLines = i;
                     iter->FoundEventEndLocation = i;
 
                     if (pattern.IsAltPatternMatched(positionedLineToProc.Line))
@@ -475,8 +475,8 @@ EventHierarchyInfoForLines GetHierarchyInfoForLines(const IPositionedLinesStorag
         for (std::size_t eventNumInLevel = 0; eventNumInLevel < eventLevel.size(); ++eventNumInLevel)
         {
             Event const& event = eventLevel[eventNumInLevel];
-            result[event.StartLine.Position.Number] = EventHierarchyInfo({ event.Group, eventLevelNum, eventNumInLevel});
-            result[event.EndLine.Position.Number] = EventHierarchyInfo({ event.Group, eventLevelNum, eventNumInLevel });
+            result[event.StartLine.Position.NumberInMatchedLines] = EventHierarchyInfo({ event.Group, eventLevelNum, eventNumInLevel});
+            result[event.EndLine.Position.NumberInMatchedLines] = EventHierarchyInfo({ event.Group, eventLevelNum, eventNumInLevel });
         }
     }
 

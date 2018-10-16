@@ -114,10 +114,10 @@ std::list<EventGraphicsItem*> GenerateEventViewItems(
         {
             const std::size_t groupIndex = eventGroupIndexes[level][i];
 
-            const qreal y = eventLevels[level][i].StartLine.Position.Number * ViewParams::BaseEventHeight + ViewParams::BaseVerticalSkip;
+            const qreal y = eventLevels[level][i].StartLine.Position.NumberInMatchedLines * ViewParams::BaseEventHeight + ViewParams::BaseVerticalSkip;
             const qreal height =
-                    (eventLevels[level][i].EndLine.Position.Number -
-                     eventLevels[level][i].StartLine.Position.Number) * ViewParams::BaseEventHeight +
+                    (eventLevels[level][i].EndLine.Position.NumberInMatchedLines -
+                     eventLevels[level][i].StartLine.Position.NumberInMatchedLines) * ViewParams::BaseEventHeight +
                     ViewParams::BaseEventHeight - ViewParams::VerticalSpace;
 
             const qreal groupViewWidth = viewSceneWidth / overlappedGroupsCountForLevel[level];
@@ -269,7 +269,7 @@ void LogViewMainWindow::slot_EventSelected(Event event)
 //        qDebug() << event.StartLine.Line;
         QTreeWidgetItem* item = new QTreeWidgetItem(
                                     QStringList()
-                                        << QString::number(event.StartLine.Position.Number)
+                                        << QString::number(event.StartLine.Position.NumberInFile)
                                         << event.StartLine.Line);
         item->setBackgroundColor(1, event.ViewColor.toQColor());
         gui_selectedEventView->addTopLevelItem(item);
@@ -282,7 +282,7 @@ void LogViewMainWindow::slot_EventSelected(Event event)
         {
             QTreeWidgetItem* item = new QTreeWidgetItem(
                                         QStringList()
-                                            << QString::number(event.StartLine.Position.Number)
+                                            << QString::number(event.StartLine.Position.NumberInFile)
                                             << event.StartLine.Line);
             item->setBackgroundColor(1, event.ViewColor.toQColor());
             gui_selectedEventView->addTopLevelItem(item);
@@ -290,7 +290,7 @@ void LogViewMainWindow::slot_EventSelected(Event event)
         {
             QTreeWidgetItem* item = new QTreeWidgetItem(
                                         QStringList()
-                                            << QString::number(event.EndLine.Position.Number)
+                                            << QString::number(event.EndLine.Position.NumberInFile)
                                             << event.EndLine.Line);
             item->setBackgroundColor(1, event.ViewColor.toQColor());
             gui_selectedEventView->addTopLevelItem(item);
