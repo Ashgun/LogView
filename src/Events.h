@@ -165,7 +165,8 @@ Event CreateEventFromPattern(IMatchableEventPattern const& pattern);
 class IEventGroupExtractor
 {
 public:
-    virtual QString GetGroupFromLine(PositionedLine const& line) const = 0;
+    virtual QString GetGroupFromLine(PositionedLine const& line) const;
+    virtual QString GetGroupFromLine(EventPattern::PatternString const& line) const = 0;
     virtual ~IEventGroupExtractor() = default;
 };
 

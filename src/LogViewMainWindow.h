@@ -14,6 +14,7 @@
 
 class EventGraphicsItem;
 
+class IEventGroupExtractor;
 class IPositionedLinesStorage;
 
 class LogViewMainWindow : public QMainWindow
@@ -57,6 +58,10 @@ private:
     std::unique_ptr<IPositionedLinesStorage> m_linesStorage;
     std::list<EventGraphicsItem*> m_eventsToView;
     std::vector<std::vector<Event>> m_eventLevels;
+
+    QString m_loadedFile;
+
+    std::unique_ptr<IEventGroupExtractor> m_groupExtractor;
 };
 
 #endif // LOGVIEWMAINWINDOW_H

@@ -498,3 +498,8 @@ QColor IMatchableEventPattern::Color::toQColor() const
 {
     return QColor(R, G, B);
 }
+
+QString IEventGroupExtractor::GetGroupFromLine(const PositionedLine& line) const
+{
+    return GetGroupFromLine(line.Line);
+}

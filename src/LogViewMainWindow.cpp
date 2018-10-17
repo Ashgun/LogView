@@ -1,5 +1,6 @@
 #include "LogViewMainWindow.h"
 
+#include <QFile>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QScrollBar>
@@ -41,9 +42,9 @@ public:
         m_lineParser.reset(new RegExpLogLineParser(headerRegExps, groupRegExp));
     }
 
-    QString GetGroupFromLine(const PositionedLine& line) const override
+    QString GetGroupFromLine(const EventPattern::PatternString& line) const override
     {
-        LogLineInfo info = m_lineParser->Parse(line.Line);
+        LogLineInfo info = m_lineParser->Parse(line);
         return info.HeaderItems[m_groupName];
     }
 
@@ -135,6 +136,51 @@ std::list<EventGraphicsItem*> GenerateEventViewItems(
     return eventsToView;
 }
 
+QStringList LoadFileBlockToStrings(const QString& filename, const qint64 from, const qint64 to)
+{
+    QStringList resultList;
+
+    QFile binfile(filename);
+
+    std::size_t const bufferSize = to - from;
+    std::vector<char> buffer(bufferSize + 1);
+    char* bufferData = buffer.data();
+
+    const auto IsEndOfLineSymbol =
+            [](const char& ch) -> bool
+            {
+                return ((ch == '\n') || (ch == '\r'));
+            };
+
+    if (binfile.open(QIODevice::ReadOnly))
+    {
+        binfile.seek(from);
+
+        QDataStream in(&binfile);
+
+        std::size_t const readBytesCount = in.readRawData(bufferData, bufferSize);
+
+        std::size_t previousEol = 0;
+        std::size_t currentEol = 0;
+        for (std::size_t i = 0; i < readBytesCount; ++i)
+        {
+            if (IsEndOfLineSymbol(bufferData[i]))
+            {
+                currentEol = i;
+                while (IsEndOfLineSymbol(bufferData[i]) && i < readBytesCount) { ++i; }
+
+                QString const line = QString::fromStdString(
+                            std::string(bufferData + previousEol, bufferData + currentEol));
+                resultList.append(line);
+
+                previousEol = i;
+            }
+        }
+    }
+
+    return resultList;
+}
+
 } // namespace
 
 LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
@@ -197,6 +243,8 @@ LogViewMainWindow::~LogViewMainWindow() = default;
 
 void LogViewMainWindow::LoadLog(const QString& filename)
 {
+    m_loadedFile = filename;
+
     BaseLinePositionStorage linePositionStorage;
     m_linesStorage = std::make_unique<BasePositionedLinesStorage>();
 
@@ -222,6 +270,10 @@ void LogViewMainWindow::LoadLog(const QString& filename)
                     EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was finished"),
                     EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was failed"),
                     CreateColor(0, 255, 0), CreateColor(255, 0, 0)));
+    lineSelector.EventPatterns.TopLevelNodes.back().SubEvents.back().AddSubEventPattern(
+        CreateSingleEventPattern("Tenant session error",
+            EventPattern::CreateStringPattern("[TenantBackupProcessor] Session error"),
+            CreateColor(0, 0, 255)));
 
     FilesIndexer indexer(linePositionStorage, *m_linesStorage, lineSelector);
     indexer.AddFileIndexes(filename);
@@ -231,10 +283,9 @@ void LogViewMainWindow::LoadLog(const QString& filename)
     headerRegExps.push_back(QPair<QString, QString>("LogLevel", "\\[([TILDWEF]){1,1}\\]\\s*"));
     headerRegExps.push_back(QPair<QString, QString>("ThreadId", "\\[([x0-9]+)\\]\\s*"));
 
-    EventGroupExtractor eventGroupExtractor(headerRegExps, "ThreadId");
+    m_groupExtractor = std::make_unique<EventGroupExtractor>(headerRegExps, "ThreadId");
 
-    m_eventLevels = FindEvents(
-        lineSelector.EventPatterns, *m_linesStorage, eventGroupExtractor);
+    m_eventLevels = FindEvents(lineSelector.EventPatterns, *m_linesStorage, *m_groupExtractor);
 
     Invalidate();
 }
@@ -266,7 +317,6 @@ void LogViewMainWindow::slot_EventSelected(Event event)
 
     if (event.Type == EventType::Single)
     {
-//        qDebug() << event.StartLine.Line;
         QTreeWidgetItem* item = new QTreeWidgetItem(
                                     QStringList()
                                         << QString::number(event.StartLine.Position.NumberInFile)
@@ -276,9 +326,6 @@ void LogViewMainWindow::slot_EventSelected(Event event)
     }
     else
     {
-//        qDebug() << event.StartLine.Line;
-//        qDebug() << event.EndLine.Line;
-
         {
             QTreeWidgetItem* item = new QTreeWidgetItem(
                                         QStringList()
@@ -287,6 +334,23 @@ void LogViewMainWindow::slot_EventSelected(Event event)
             item->setBackgroundColor(1, event.ViewColor.toQColor());
             gui_selectedEventView->addTopLevelItem(item);
         }
+
+        QStringList lines = LoadFileBlockToStrings(m_loadedFile, event.StartLine.Position.Offset, event.EndLine.Position.Offset);
+
+        for (int i = 1; i < lines.size(); ++i)
+        {
+            if (m_groupExtractor->GetGroupFromLine(lines[i]) != event.Group)
+            {
+                continue;
+            }
+
+            QTreeWidgetItem* item = new QTreeWidgetItem(
+                                        QStringList()
+                                            << QString::number(event.StartLine.Position.NumberInFile + i)
+                                            << lines[i]);
+            gui_selectedEventView->addTopLevelItem(item);
+        }
+
         {
             QTreeWidgetItem* item = new QTreeWidgetItem(
                                         QStringList()
