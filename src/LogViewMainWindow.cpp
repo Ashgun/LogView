@@ -58,6 +58,11 @@ std::list<EventGraphicsItem*> GenerateEventViewItems(
         const qreal viewSceneWidth,
         IEventGraphicsItemSelectionCallback& selectionCallback)
 {
+    if (eventLevels.empty())
+    {
+        return std::list<EventGraphicsItem*>();
+    }
+
     std::list<EventGraphicsItem*> eventsToView;
 
     std::vector<std::vector<std::size_t>> eventGroupIndexes(eventLevels.size());
@@ -67,7 +72,7 @@ std::list<EventGraphicsItem*> GenerateEventViewItems(
     {
         std::vector<std::vector<std::set<QString>>> crossedEventGroups(eventLevels.size());
 
-        for (std::size_t level = 0; level < eventLevels.size(); ++level)
+        for (std::size_t level = 0; level < 2 && level < eventLevels.size(); ++level)
         {
             crossedEventGroups[level].resize(eventLevels[level].size());
             for (std::size_t i = 0; i < eventLevels[level].size(); ++i)
@@ -102,6 +107,24 @@ std::list<EventGraphicsItem*> GenerateEventViewItems(
                         eventGroupIndexes[level][i] = index;
                     }
                     ++index;
+                }
+            }
+        }
+
+        for (std::size_t level = 2; level < eventLevels.size(); ++level)
+        {
+            eventGroupIndexes[level].resize(eventLevels[level].size());
+            crossedEventGroups[level].resize(eventLevels[level].size());
+            overlappedGroupsCountForLevel[level] = overlappedGroupsCountForLevel[1];
+            for (std::size_t i = 0; i < eventLevels[level].size(); ++i)
+            {
+                for (std::size_t j = 0; j < eventLevels[1].size(); ++j)
+                {
+                    if (IsEventsOverlapped(eventLevels[level][i], eventLevels[1][j]) &&
+                        eventLevels[level][i].Group == eventLevels[1][j].Group)
+                    {
+                        eventGroupIndexes[level][i] = eventGroupIndexes[1][j];
+                    }
                 }
             }
         }
@@ -407,8 +430,8 @@ void LogViewMainWindow::CreateConnetions()
 
 void LogViewMainWindow::Redraw()
 {
-    m_eventsToView = GenerateEventViewItems(m_eventLevels, gui_EventsViewScene->width(), *gui_EventsViewScene);
     gui_EventsViewScene->clear();
+    m_eventsToView = GenerateEventViewItems(m_eventLevels, gui_EventsViewScene->width(), *gui_EventsViewScene);
     for (auto& eventViewItem : m_eventsToView)
     {
         gui_EventsViewScene->addItem(eventViewItem);
