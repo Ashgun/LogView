@@ -7,6 +7,7 @@
 #include <QString>
 
 #include <QColor>
+#include <QVector>
 #include <list>
 #include <map>
 #include <memory>
@@ -161,6 +162,15 @@ struct Event
 };
 
 Event CreateEventFromPattern(IMatchableEventPattern const& pattern);
+
+struct LogLineHeaderParsingParams
+{
+    using GroupNameType = QString;
+    using GroupRegExpString = QString;
+
+    QVector<QPair<GroupNameType, GroupRegExpString>> HeaderGroupRegExps;
+    QString GroupNameForGrouping;
+};
 
 class IEventGroupExtractor
 {

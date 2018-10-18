@@ -32,7 +32,8 @@ SOURCES += src/main.cpp \
     src/CustomView.cpp \
     src/CustomItem.cpp \
     src/EventGraphicsItem.cpp \
-    src/EventsGraphicsScene.cpp
+    src/EventsGraphicsScene.cpp \
+    src/LogLineHeaderParsingParamsEditWidget.cpp
 
 HEADERS += \
     src/ILogLineParser.h \
@@ -55,4 +56,5 @@ HEADERS += \
     src/CustomView.h \
     src/CustomItem.h \
     src/EventGraphicsItem.h \
-    src/EventsGraphicsScene.h
+    src/EventsGraphicsScene.h \
+    src/LogLineHeaderParsingParamsEditWidget.h

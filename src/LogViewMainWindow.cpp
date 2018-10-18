@@ -35,11 +35,11 @@ namespace
 class EventGroupExtractor : public IEventGroupExtractor
 {
 public:
-    explicit EventGroupExtractor(QVector<QPair<QString, QString>> const& headerRegExps, QString const& groupName) :
-        m_groupName(groupName)
+    explicit EventGroupExtractor(LogLineHeaderParsingParams const& logLineHeaderParsingParams) :
+        m_groupName(logLineHeaderParsingParams.GroupNameForGrouping)
     {
         QString groupRegExp("");
-        m_lineParser.reset(new RegExpLogLineParser(headerRegExps, groupRegExp));
+        m_lineParser.reset(new RegExpLogLineParser(logLineHeaderParsingParams.HeaderGroupRegExps, groupRegExp));
     }
 
     QString GetGroupFromLine(const EventPattern::PatternString& line) const override
@@ -301,12 +301,13 @@ void LogViewMainWindow::LoadLog(const QString& filename)
     FilesIndexer indexer(linePositionStorage, *m_linesStorage, lineSelector);
     indexer.AddFileIndexes(filename);
 
-    QVector<QPair<QString, QString>> headerRegExps;
-    headerRegExps.push_back(QPair<QString, QString>("DateTime", "\\[([0-9_\\./\\-\\s:]+)\\]\\s*"));
-    headerRegExps.push_back(QPair<QString, QString>("LogLevel", "\\[([TILDWEF]){1,1}\\]\\s*"));
-    headerRegExps.push_back(QPair<QString, QString>("ThreadId", "\\[([x0-9]+)\\]\\s*"));
+    LogLineHeaderParsingParams logLineHeaderParsingParams;
+    logLineHeaderParsingParams.HeaderGroupRegExps.push_back(QPair<QString, QString>("DateTime", "\\[([0-9_\\./\\-\\s:]+)\\]\\s*"));
+    logLineHeaderParsingParams.HeaderGroupRegExps.push_back(QPair<QString, QString>("LogLevel", "\\[([TILDWEF]){1,1}\\]\\s*"));
+    logLineHeaderParsingParams.HeaderGroupRegExps.push_back(QPair<QString, QString>("ThreadId", "\\[([x0-9]+)\\]\\s*"));
+    logLineHeaderParsingParams.GroupNameForGrouping = logLineHeaderParsingParams.HeaderGroupRegExps.last().first;
 
-    m_groupExtractor = std::make_unique<EventGroupExtractor>(headerRegExps, "ThreadId");
+    m_groupExtractor = std::make_unique<EventGroupExtractor>(logLineHeaderParsingParams);
 
     m_eventLevels = FindEvents(lineSelector.EventPatterns, *m_linesStorage, *m_groupExtractor);
 
