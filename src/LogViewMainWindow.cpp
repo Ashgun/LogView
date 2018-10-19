@@ -263,8 +263,10 @@ LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
 }
 
 LogViewMainWindow::~LogViewMainWindow() = default;
-
-void LogViewMainWindow::LoadLog(const QString& filename, const QString& headerParsingConfigJson)
+#include <iostream>
+void LogViewMainWindow::LoadLog(
+        const QString& filename, const QString& headerParsingConfigJson,
+        const QString& eventsParsingConfigJson)
 {
     m_loadedFile = filename;
 
@@ -272,43 +274,10 @@ void LogViewMainWindow::LoadLog(const QString& filename, const QString& headerPa
     m_linesStorage = std::make_unique<BasePositionedLinesStorage>();
 
     EventPatternsHierarchyMatcher lineSelector;
-    lineSelector.EventPatterns.AddEventPattern(
-        CreateExtendedEventPattern("Service works",
-            EventPattern::CreateStringPattern("Logging started"),
-            EventPattern::CreateStringPattern("Logging finished"),
-            CreateColor(128, 128, 128)));
-    lineSelector.EventPatterns.TopLevelNodes.back().AddSubEventPattern(
-        CreateSingleEventPattern("Accounts list obtained",
-            EventPattern::CreateStringPattern("[AccountRegistry] New accounts list obtained"),
-            CreateColor(128, 128, 0)));
-    lineSelector.EventPatterns.TopLevelNodes.back().AddSubEventPattern(
-                CreateExtendedEventPattern("Tenant backup",
-                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session started"),
-                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed successfully"),
-                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed with errors"),
-                    CreateColor(0, 128, 0), CreateColor(128, 0, 0)));
-    lineSelector.EventPatterns.TopLevelNodes.back().SubEvents.back().AddSubEventPattern(
-                CreateExtendedEventPattern("Mailbox backup",
-                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was started"),
-                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was finished"),
-                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was failed"),
-                    CreateColor(0, 255, 0), CreateColor(255, 0, 0)));
-    lineSelector.EventPatterns.TopLevelNodes.back().SubEvents.back().AddSubEventPattern(
-        CreateSingleEventPattern("Tenant session error",
-            EventPattern::CreateStringPattern("[TenantBackupProcessor] Session error"),
-            CreateColor(0, 0, 255)));
+    EventPatternsHierarchy::fromJson(eventsParsingConfigJson, lineSelector.EventPatterns);
 
     FilesIndexer indexer(linePositionStorage, *m_linesStorage, lineSelector);
     indexer.AddFileIndexes(filename);
-
-//    LogLineHeaderParsingParams logLineHeaderParsingParams;
-//    logLineHeaderParsingParams.HeaderGroupRegExps.push_back(QPair<QString, QString>("DateTime", "\\[([0-9_\\./\\-\\s:]+)\\]\\s*"));
-//    logLineHeaderParsingParams.HeaderGroupRegExps.push_back(QPair<QString, QString>("LogLevel", "\\[([TILDWEF]){1,1}\\]\\s*"));
-//    logLineHeaderParsingParams.HeaderGroupRegExps.push_back(QPair<QString, QString>("ThreadId", "\\[([x0-9]+)\\]\\s*"));
-//    logLineHeaderParsingParams.GroupNameForGrouping = logLineHeaderParsingParams.HeaderGroupRegExps.last().first;
-
-//    const auto a = LogLineHeaderParsingParams::ToJson(logLineHeaderParsingParams);
-//    logLineHeaderParsingParams = LogLineHeaderParsingParams::FromJson(a);
 
     const LogLineHeaderParsingParams logLineHeaderParsingParams = LogLineHeaderParsingParams::FromJson(headerParsingConfigJson);
     m_groupExtractor = std::make_unique<EventGroupExtractor>(logLineHeaderParsingParams);
@@ -390,18 +359,26 @@ void LogViewMainWindow::slot_EventSelected(Event event)
     }
 }
 
-void LogViewMainWindow::slot_act_openFileTriggred()
+QString LoadFileToQString(const QString& filename)
 {
-    QFile f("HeaderParsingConfig.json");
+    QFile f(filename);
     if (!f.open(QFile::ReadOnly | QFile::Text))
     {
-        return;
+        return QString();
     }
 
     QTextStream in(&f);
-    const QString headerParsingConfigJson = in.readAll();
+    const QString data = in.readAll();
 
-    LoadLog("log1.log", headerParsingConfigJson);
+    return data;
+}
+
+void LogViewMainWindow::slot_act_openFileTriggred()
+{
+    const QString headerParsingConfigJson = LoadFileToQString("HeaderParsingConfig.json");
+    const QString eventsParsingConfigJson = LoadFileToQString("BackupServiceParseConfig.json");
+
+    LoadLog("log1.log", headerParsingConfigJson, eventsParsingConfigJson);
 }
 
 void LogViewMainWindow::Invalidate()

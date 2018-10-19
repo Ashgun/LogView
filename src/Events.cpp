@@ -224,6 +224,307 @@ void EventPatternsHierarchy::AddEventPattern(IMatchableEventPatternPtr event)
     TopLevelNodes.back().Event = std::move(event);
 }
 
+namespace
+{
+
+Json::Value PatternToJson(const EventPattern& pattern)
+{
+    Json::Value value;
+
+    value["Data"] = pattern.Pattern.toStdString();
+    value["Type"] = pattern.Type == EventPattern::PatternType::String ? "String" : "RegExp";
+
+    return value;
+}
+
+Json::Value SingleEventToJson(const IMatchableEventPattern* basePattern)
+{
+    Json::Value value;
+
+    const SingleEventPattern* pattern = dynamic_cast<const SingleEventPattern*>(basePattern);
+
+    value["PatternName"] = pattern->Name.toStdString();
+    value["PatternType"] = "Single";
+    value["Color"] = pattern->ViewColor.toColorCode().toStdString();
+    value["Pattern"] = PatternToJson(pattern->Pattern);
+
+    return value;
+}
+
+Json::Value ExtendEventToJson(const IMatchableEventPattern* basePattern)
+{
+    Json::Value value;
+
+    const ExtendedEventPattern* pattern = dynamic_cast<const ExtendedEventPattern*>(basePattern);
+
+    value["PatternName"] = pattern->Name.toStdString();
+    value["PatternType"] = "Extend";
+    value["SuccessColor"] = pattern->SuccessEndColor.toColorCode().toStdString();
+    value["AltColor"] = pattern->AltEndColor.toColorCode().toStdString();
+
+    value["StartPattern"] = PatternToJson(pattern->StartPattern);
+    value["EndPattern"] = PatternToJson(pattern->EndPattern);
+    value["AltEnd"] = PatternToJson(pattern->AltEndPattern);
+
+    return value;
+}
+
+Json::Value EventToJson(const IMatchableEventPattern* basePattern)
+{
+    return basePattern->GetType() == EventType::Single ?
+        SingleEventToJson(basePattern) : ExtendEventToJson(basePattern);
+}
+
+Json::Value EventPatternsHierarchyNodeToJson(const EventPatternsHierarchyNode& node)
+{
+    Json::Value root = EventToJson(node.Event.get());
+
+    Json::Value subEvents(Json::ValueType::arrayValue);
+    for (const auto& subEvent : node.SubEvents)
+    {
+        subEvents.append(EventPatternsHierarchyNodeToJson(subEvent));
+    }
+    root["SubEvents"] = subEvents;
+
+    return root;
+}
+
+} // namespace
+
+QString EventPatternsHierarchy::toJson(const EventPatternsHierarchy& patterns)
+{
+    Json::Value root;
+
+    Json::Value groupInfoArray(Json::ValueType::arrayValue);
+    for (const auto& node : patterns.TopLevelNodes)
+    {
+        Json::Value value = EventToJson(node.Event.get());
+
+        Json::Value subEvents(Json::ValueType::arrayValue);
+        for (const auto& subEvent : node.SubEvents)
+        {
+            subEvents.append(EventPatternsHierarchyNodeToJson(subEvent));
+        }
+        value["SubEvents"] = subEvents;
+
+        groupInfoArray.append(value);
+    }
+    root["EventPatternsHierarchyNodes"] = groupInfoArray;
+
+    std::unique_ptr<Json::StreamWriter> writer(Json::StreamWriterBuilder().newStreamWriter());
+    std::stringstream ss;
+    writer->write(root, &ss);
+    return QString::fromStdString(ss.str());
+}
+
+namespace
+{
+
+EventPattern CreateEventPattern(const QString& data, const QString& type)
+{
+    if (type.toUpper() == "STRING")
+    {
+        return EventPattern::CreateStringPattern(data);
+    }
+    else
+    {
+        return EventPattern::CreateRegExpPattern(data);
+    }
+}
+
+void CheckJsonValue(const Json::Value& parent, const std::string& valueKey, const std::string& dataType)
+{
+    if (parent[valueKey].isNull() || parent[valueKey].empty())
+    {
+        throw std::invalid_argument(std::string("Invalid JSON data in EventPatternsHierarchy") + dataType + ": " + valueKey);
+    }
+}
+
+EventPattern ParseLinePattern(const Json::Value& pattern)
+{
+    CheckJsonValue(pattern, "Type", "EventPatternsHierarchy");
+    CheckJsonValue(pattern, "Data", "EventPatternsHierarchy");
+
+    const QString type = QString::fromStdString(pattern["Type"].asString());
+    const QString data = QString::fromStdString(pattern["Data"].asString());
+
+    return CreateEventPattern(data, type);
+}
+
+void ParsePatternHierarchyNode(EventPatternsHierarchyNode& node, const Json::Value& patternHierarchyNode)
+{
+    CheckJsonValue(patternHierarchyNode, "PatternName", "EventPatternsHierarchy");
+    CheckJsonValue(patternHierarchyNode, "PatternType", "EventPatternsHierarchy");
+
+    const QString patternName = QString::fromStdString(patternHierarchyNode["PatternName"].asString());
+    const QString patternTypeString = QString::fromStdString(patternHierarchyNode["PatternType"].asString());
+    const EventType patternType = patternTypeString.toUpper() == "SINGLE" ? EventType::Single : EventType::Extended;
+
+    if (patternType == EventType::Single)
+    {
+        CheckJsonValue(patternHierarchyNode, "Color", "EventPatternsHierarchy");
+
+        const IMatchableEventPattern::Color color =
+                IMatchableEventPattern::Color::fromColorCode(QString::fromStdString(patternHierarchyNode["Color"].asString()));
+
+        CheckJsonValue(patternHierarchyNode, "Pattern", "EventPatternsHierarchy");
+        node.AddSubEventPattern(
+                    CreateSingleEventPattern(
+                        patternName,
+                        ParseLinePattern(patternHierarchyNode["Pattern"]),
+                        color));
+    }
+    else
+    {
+        CheckJsonValue(patternHierarchyNode, "SuccessColor", "EventPatternsHierarchy");
+        CheckJsonValue(patternHierarchyNode, "AltColor", "EventPatternsHierarchy");
+
+        const IMatchableEventPattern::Color successColor =
+                IMatchableEventPattern::Color::fromColorCode(QString::fromStdString(patternHierarchyNode["SuccessColor"].asString()));
+
+        CheckJsonValue(patternHierarchyNode, "StartPattern", "EventPatternsHierarchy");
+        CheckJsonValue(patternHierarchyNode, "EndPattern", "EventPatternsHierarchy");
+
+        if (!patternHierarchyNode["AltEnd"].isNull() && !patternHierarchyNode["AltEnd"].empty())
+        {
+            const IMatchableEventPattern::Color altColor =
+                    IMatchableEventPattern::Color::fromColorCode(QString::fromStdString(patternHierarchyNode["AltColor"].asString()));
+
+            node.AddSubEventPattern(
+                        CreateExtendedEventPattern(
+                            patternName,
+                            ParseLinePattern(patternHierarchyNode["StartPattern"]),
+                            ParseLinePattern(patternHierarchyNode["EndPattern"]),
+                            ParseLinePattern(patternHierarchyNode["AltEnd"]),
+                            successColor, altColor)
+                        );
+        }
+        else
+        {
+            node.AddSubEventPattern(
+                        CreateExtendedEventPattern(
+                            patternName,
+                            ParseLinePattern(patternHierarchyNode["StartPattern"]),
+                            ParseLinePattern(patternHierarchyNode["EndPattern"]),
+                            successColor)
+                        );
+        }
+    }
+
+    if (!patternHierarchyNode["SubEvents"].isNull() &&
+        !patternHierarchyNode["SubEvents"].empty() &&
+        patternHierarchyNode["SubEvents"].isArray())
+    {
+        for (Json::ArrayIndex i = 0; i < patternHierarchyNode["SubEvents"].size(); ++i)
+        {
+            const Json::Value subEvent = patternHierarchyNode["SubEvents"][i];
+            ParsePatternHierarchyNode(node.SubEvents.back(), subEvent);
+        }
+    }
+}
+
+void ParsePatternHierarchyNode(EventPatternsHierarchy& nodes, const Json::Value& patternHierarchyNode)
+{
+    CheckJsonValue(patternHierarchyNode, "PatternName", "EventPatternsHierarchy");
+    CheckJsonValue(patternHierarchyNode, "PatternType", "EventPatternsHierarchy");
+
+    const QString patternName = QString::fromStdString(patternHierarchyNode["PatternName"].asString());
+    const QString patternTypeString = QString::fromStdString(patternHierarchyNode["PatternType"].asString());
+    const EventType patternType = patternTypeString.toUpper() == "SINGLE" ? EventType::Single : EventType::Extended;
+
+    if (patternType == EventType::Single)
+    {
+        CheckJsonValue(patternHierarchyNode, "Color", "EventPatternsHierarchy");
+
+        const IMatchableEventPattern::Color color =
+                IMatchableEventPattern::Color::fromColorCode(QString::fromStdString(patternHierarchyNode["Color"].asString()));
+
+        CheckJsonValue(patternHierarchyNode, "Pattern", "EventPatternsHierarchy");
+        nodes.AddEventPattern(
+                    CreateSingleEventPattern(
+                        patternName,
+                        ParseLinePattern(patternHierarchyNode["Pattern"]),
+                        color));
+    }
+    else
+    {
+        CheckJsonValue(patternHierarchyNode, "SuccessColor", "EventPatternsHierarchy");
+        CheckJsonValue(patternHierarchyNode, "AltColor", "EventPatternsHierarchy");
+
+        const IMatchableEventPattern::Color successColor =
+                IMatchableEventPattern::Color::fromColorCode(QString::fromStdString(patternHierarchyNode["SuccessColor"].asString()));
+
+        CheckJsonValue(patternHierarchyNode, "StartPattern", "EventPatternsHierarchy");
+        CheckJsonValue(patternHierarchyNode, "EndPattern", "EventPatternsHierarchy");
+
+        if (!patternHierarchyNode["AltEnd"].isNull() && !patternHierarchyNode["AltEnd"].empty())
+        {
+            const IMatchableEventPattern::Color altColor =
+                    IMatchableEventPattern::Color::fromColorCode(QString::fromStdString(patternHierarchyNode["AltColor"].asString()));
+
+            nodes.AddEventPattern(
+                        CreateExtendedEventPattern(
+                            patternName,
+                            ParseLinePattern(patternHierarchyNode["StartPattern"]),
+                            ParseLinePattern(patternHierarchyNode["EndPattern"]),
+                            ParseLinePattern(patternHierarchyNode["AltEnd"]),
+                            successColor, altColor)
+                        );
+        }
+        else
+        {
+            nodes.AddEventPattern(
+                        CreateExtendedEventPattern(
+                            patternName,
+                            ParseLinePattern(patternHierarchyNode["StartPattern"]),
+                            ParseLinePattern(patternHierarchyNode["EndPattern"]),
+                            successColor)
+                        );
+        }
+    }
+
+    if (!patternHierarchyNode["SubEvents"].isNull() &&
+        !patternHierarchyNode["SubEvents"].empty() &&
+        patternHierarchyNode["SubEvents"].isArray())
+    {
+        for (Json::ArrayIndex i = 0; i < patternHierarchyNode["SubEvents"].size(); ++i)
+        {
+            const Json::Value subEvent = patternHierarchyNode["SubEvents"][i];
+            ParsePatternHierarchyNode(nodes.TopLevelNodes.back(), subEvent);
+        }
+    }
+}
+
+} // namespace
+
+void EventPatternsHierarchy::fromJson(const QString& jsonData, EventPatternsHierarchy& patterns)
+{
+    std::unique_ptr<Json::CharReader> reader(Json::CharReaderBuilder().newCharReader());
+
+    Json::Value root;
+
+    const std::string data = jsonData.toStdString();
+    std::string errs;
+    if (!reader->parse(data.data(), data.data() + data.length(), &root, &errs))
+    {
+        throw std::invalid_argument(std::string("Invalid JSON data in ") + __FUNCTION__ + ": " + errs);
+    }
+
+    if (root["EventPatternsHierarchyNodes"].isNull() ||
+        root["EventPatternsHierarchyNodes"].empty() ||
+        !root["EventPatternsHierarchyNodes"].isArray())
+    {
+        throw std::invalid_argument("Invalid JSON data in EventPatternsHierarchy: EventPatternsHierarchyNodes");
+    }
+
+    patterns.TopLevelNodes.reserve(static_cast<std::size_t>(root["EventPatternsHierarchyNodes"].size()));
+    for (Json::ArrayIndex i = 0; i < root["EventPatternsHierarchyNodes"].size(); ++i)
+    {
+        const Json::Value patternHierarchyNode = root["EventPatternsHierarchyNodes"][i];
+        ParsePatternHierarchyNode(patterns, patternHierarchyNode);
+    }
+}
+
 EventPatternsHierarchyNode::EventPatternsHierarchyNode(const EventPatternsHierarchyNode& other) :
     Event(other.Event != nullptr ? other.Event->Clone() : nullptr),
     SubEvents(other.SubEvents)
@@ -505,6 +806,22 @@ IMatchableEventPattern::Color CreateColor(const quint8 R, const quint8 G, const 
 QColor IMatchableEventPattern::Color::toQColor() const
 {
     return QColor(R, G, B);
+}
+
+QString IMatchableEventPattern::Color::toColorCode() const
+{
+    return QString::number(R, 16).toUpper().rightJustified(2, '0') +
+           QString::number(G, 16).toUpper().rightJustified(2, '0') +
+           QString::number(B, 16).toUpper().rightJustified(2, '0');
+}
+
+IMatchableEventPattern::Color IMatchableEventPattern::Color::fromColorCode(const QString& colorCode)
+{
+    IMatchableEventPattern::Color color;
+    color.R = static_cast<quint8>(colorCode.mid(0, 2).toInt(nullptr, 16));
+    color.G = static_cast<quint8>(colorCode.mid(2, 2).toInt(nullptr, 16));
+    color.B = static_cast<quint8>(colorCode.mid(4, 2).toInt(nullptr, 16));
+    return color;
 }
 
 QString IEventGroupExtractor::GetGroupFromLine(const PositionedLine& line) const

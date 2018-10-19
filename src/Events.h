@@ -30,6 +30,8 @@ public:
         quint8 B;
 
         QColor toQColor() const;
+        QString toColorCode() const;
+        static Color fromColorCode(const QString& colorCode);
     };
 
 public:
@@ -134,6 +136,10 @@ struct EventPatternsHierarchy
     std::vector<EventPatternsHierarchyNode> TopLevelNodes;
 
     void AddEventPattern(IMatchableEventPatternPtr event);
+
+public:
+    static QString toJson(const EventPatternsHierarchy& patterns);
+    static void fromJson(const QString& jsonData, EventPatternsHierarchy& pattern);
 };
 
 class EventPatternsHierarchyMatcher

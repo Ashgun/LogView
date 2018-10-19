@@ -24,7 +24,7 @@ public:
     explicit LogViewMainWindow(QWidget *parent = nullptr);
     ~LogViewMainWindow() override;
 
-    void LoadLog(const QString& filename, const QString& headerParsingConfigJson);
+    void LoadLog(const QString& filename, const QString& headerParsingConfigJson, const QString& eventsParsingConfigJson);
     void LoadLogView();
 
 signals:

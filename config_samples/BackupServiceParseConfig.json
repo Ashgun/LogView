@@ -1,0 +1,97 @@
+{
+	"EventPatternsHierarchyNodes" : 
+	[
+		{
+			"AltColor" : "808080",
+			"AltEnd" : 
+			{
+				"Data" : "Logging finished",
+				"Type" : "String"
+			},
+			"EndPattern" : 
+			{
+				"Data" : "Logging finished",
+				"Type" : "String"
+			},
+			"PatternName" : "Service works",
+			"PatternType" : "Extend",
+			"StartPattern" : 
+			{
+				"Data" : "Logging started",
+				"Type" : "String"
+			},
+			"SubEvents" : 
+			[
+				{
+					"Color" : "808000",
+					"Pattern" : 
+					{
+						"Data" : "[AccountRegistry] New accounts list obtained",
+						"Type" : "String"
+					},
+					"PatternName" : "Accounts list obtained",
+					"PatternType" : "Single",
+					"SubEvents" : []
+				},
+				{
+					"AltColor" : "800000",
+					"AltEnd" : 
+					{
+						"Data" : "[TenantBackupProcessor] Session completed with errors",
+						"Type" : "String"
+					},
+					"EndPattern" : 
+					{
+						"Data" : "[TenantBackupProcessor] Session completed successfully",
+						"Type" : "String"
+					},
+					"PatternName" : "Tenant backup",
+					"PatternType" : "Extend",
+					"StartPattern" : 
+					{
+						"Data" : "[TenantBackupProcessor] Session started",
+						"Type" : "String"
+					},
+					"SubEvents" : 
+					[
+						{
+							"AltColor" : "FF0000",
+							"AltEnd" : 
+							{
+								"Data" : "\\[UserBackupProcessor\\] Session #[0-9]+ was failed",
+								"Type" : "RegExp"
+							},
+							"EndPattern" : 
+							{
+								"Data" : "\\[UserBackupProcessor\\] Session #[0-9]+ was finished",
+								"Type" : "RegExp"
+							},
+							"PatternName" : "Mailbox backup",
+							"PatternType" : "Extend",
+							"StartPattern" : 
+							{
+								"Data" : "\\[UserBackupProcessor\\] Session #[0-9]+ was started",
+								"Type" : "RegExp"
+							},
+							"SubEvents" : [],
+							"SuccessColor" : "00FF00"
+						},
+						{
+							"Color" : "0000FF",
+							"Pattern" : 
+							{
+								"Data" : "[TenantBackupProcessor] Session error",
+								"Type" : "String"
+							},
+							"PatternName" : "Tenant session error",
+							"PatternType" : "Single",
+							"SubEvents" : []
+						}
+					],
+					"SuccessColor" : "008000"
+				}
+			],
+			"SuccessColor" : "808080"
+		}
+	]
+}
