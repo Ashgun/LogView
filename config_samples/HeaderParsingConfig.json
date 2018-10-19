@@ -1,0 +1,18 @@
+{
+	"GroupNameForGrouping" : "ThreadId",
+	"HeaderGroupRegExps" :
+	[
+		{
+			"GroupName" : "DateTime",
+			"GroupRegExpString" : "\\[([0-9_\\./\\-\\s:]+)\\]\\s*"
+		},
+		{
+			"GroupName" : "LogLevel",
+			"GroupRegExpString" : "\\[([TILDWEF]){1,1}\\]\\s*"
+		},
+		{
+			"GroupName" : "ThreadId",
+			"GroupRegExpString" : "\\[([x0-9]+)\\]\\s*"
+		}
+	]
+}

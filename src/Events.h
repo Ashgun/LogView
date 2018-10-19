@@ -170,6 +170,9 @@ struct LogLineHeaderParsingParams
 
     QVector<QPair<GroupNameType, GroupRegExpString>> HeaderGroupRegExps;
     QString GroupNameForGrouping;
+
+    static LogLineHeaderParsingParams FromJson(const QString& jsonData);
+    static QString ToJson(const LogLineHeaderParsingParams& params);
 };
 
 class IEventGroupExtractor

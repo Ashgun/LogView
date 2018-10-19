@@ -264,7 +264,7 @@ LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
 
 LogViewMainWindow::~LogViewMainWindow() = default;
 
-void LogViewMainWindow::LoadLog(const QString& filename)
+void LogViewMainWindow::LoadLog(const QString& filename, const QString& headerParsingConfigJson)
 {
     m_loadedFile = filename;
 
@@ -301,12 +301,16 @@ void LogViewMainWindow::LoadLog(const QString& filename)
     FilesIndexer indexer(linePositionStorage, *m_linesStorage, lineSelector);
     indexer.AddFileIndexes(filename);
 
-    LogLineHeaderParsingParams logLineHeaderParsingParams;
-    logLineHeaderParsingParams.HeaderGroupRegExps.push_back(QPair<QString, QString>("DateTime", "\\[([0-9_\\./\\-\\s:]+)\\]\\s*"));
-    logLineHeaderParsingParams.HeaderGroupRegExps.push_back(QPair<QString, QString>("LogLevel", "\\[([TILDWEF]){1,1}\\]\\s*"));
-    logLineHeaderParsingParams.HeaderGroupRegExps.push_back(QPair<QString, QString>("ThreadId", "\\[([x0-9]+)\\]\\s*"));
-    logLineHeaderParsingParams.GroupNameForGrouping = logLineHeaderParsingParams.HeaderGroupRegExps.last().first;
+//    LogLineHeaderParsingParams logLineHeaderParsingParams;
+//    logLineHeaderParsingParams.HeaderGroupRegExps.push_back(QPair<QString, QString>("DateTime", "\\[([0-9_\\./\\-\\s:]+)\\]\\s*"));
+//    logLineHeaderParsingParams.HeaderGroupRegExps.push_back(QPair<QString, QString>("LogLevel", "\\[([TILDWEF]){1,1}\\]\\s*"));
+//    logLineHeaderParsingParams.HeaderGroupRegExps.push_back(QPair<QString, QString>("ThreadId", "\\[([x0-9]+)\\]\\s*"));
+//    logLineHeaderParsingParams.GroupNameForGrouping = logLineHeaderParsingParams.HeaderGroupRegExps.last().first;
 
+//    const auto a = LogLineHeaderParsingParams::ToJson(logLineHeaderParsingParams);
+//    logLineHeaderParsingParams = LogLineHeaderParsingParams::FromJson(a);
+
+    const LogLineHeaderParsingParams logLineHeaderParsingParams = LogLineHeaderParsingParams::FromJson(headerParsingConfigJson);
     m_groupExtractor = std::make_unique<EventGroupExtractor>(logLineHeaderParsingParams);
 
     m_eventLevels = FindEvents(lineSelector.EventPatterns, *m_linesStorage, *m_groupExtractor);
@@ -388,7 +392,16 @@ void LogViewMainWindow::slot_EventSelected(Event event)
 
 void LogViewMainWindow::slot_act_openFileTriggred()
 {
-    LoadLog("log1.log");
+    QFile f("HeaderParsingConfig.json");
+    if (!f.open(QFile::ReadOnly | QFile::Text))
+    {
+        return;
+    }
+
+    QTextStream in(&f);
+    const QString headerParsingConfigJson = in.readAll();
+
+    LoadLog("log1.log", headerParsingConfigJson);
 }
 
 void LogViewMainWindow::Invalidate()

@@ -1,6 +1,14 @@
 #include "Events.h"
 #include "IPositionedLinesStorage.h"
 
+#include <json/reader.h>
+#include <json/value.h>
+#include <json/writer.h>
+
+#include <memory>
+#include <stdexcept>
+#include <sstream>
+
 SingleEventPattern::SingleEventPattern(const QString& name, const EventPattern::PatternType& patternType,
     const EventPattern::PatternString& patternString, const IMatchableEventPattern::Color& color) :
     SingleEventPattern(name, EventPattern({patternType, patternString}), color)
@@ -217,7 +225,7 @@ void EventPatternsHierarchy::AddEventPattern(IMatchableEventPatternPtr event)
 }
 
 EventPatternsHierarchyNode::EventPatternsHierarchyNode(const EventPatternsHierarchyNode& other) :
-    Event(other.Event != nullptr ? std::move(other.Event->Clone()) : 0),
+    Event(other.Event != nullptr ? other.Event->Clone() : nullptr),
     SubEvents(other.SubEvents)
 {
 }
@@ -502,4 +510,78 @@ QColor IMatchableEventPattern::Color::toQColor() const
 QString IEventGroupExtractor::GetGroupFromLine(const PositionedLine& line) const
 {
     return GetGroupFromLine(line.Line);
+}
+
+LogLineHeaderParsingParams LogLineHeaderParsingParams::FromJson(const QString& jsonData)
+{
+    std::unique_ptr<Json::CharReader> reader(Json::CharReaderBuilder().newCharReader());
+
+    Json::Value root;
+
+    const std::string data = jsonData.toStdString();
+    std::string errs;
+    if (!reader->parse(data.data(), data.data() + data.length(), &root, &errs))
+    {
+        throw std::invalid_argument(std::string("Invalid JSON data in ") + __FUNCTION__ + ": " + errs);
+    }
+
+    LogLineHeaderParsingParams params;
+
+    if (root["HeaderGroupRegExps"].isNull() || root["HeaderGroupRegExps"].empty() || !root["HeaderGroupRegExps"].isArray())
+    {
+        throw std::invalid_argument("Invalid JSON data in LogLineHeaderParsingParams: HeaderGroupRegExps");
+    }
+
+    if (root["GroupNameForGrouping"].isNull() || root["GroupNameForGrouping"].empty())
+    {
+        throw std::invalid_argument("Invalid JSON data in LogLineHeaderParsingParams: GroupNameForGrouping");
+    }
+
+    params.GroupNameForGrouping = QString::fromStdString(root["GroupNameForGrouping"].asString());
+
+    params.HeaderGroupRegExps.reserve(static_cast<int>(root["HeaderGroupRegExps"].size()));
+    for (Json::ArrayIndex i = 0; i < root["HeaderGroupRegExps"].size(); ++i)
+    {
+        const Json::Value headerParsingInfo = root["HeaderGroupRegExps"][i];
+
+        if (headerParsingInfo["GroupName"].isNull() || headerParsingInfo["GroupName"].empty())
+        {
+            throw std::invalid_argument("Invalid JSON data in LogLineHeaderParsingParams: GroupName");
+        }
+
+        if (headerParsingInfo["GroupRegExpString"].isNull() || headerParsingInfo["GroupRegExpString"].empty())
+        {
+            throw std::invalid_argument("Invalid JSON data in LogLineHeaderParsingParams: GroupRegExpString");
+        }
+
+        const LogLineHeaderParsingParams::GroupNameType group = QString::fromStdString(headerParsingInfo["GroupName"].asString());
+        const LogLineHeaderParsingParams::GroupRegExpString regExp = QString::fromStdString(headerParsingInfo["GroupRegExpString"].asString());
+
+        params.HeaderGroupRegExps.push_back(QPair<QString, QString>(group, regExp));
+    }
+
+    return params;
+}
+
+QString LogLineHeaderParsingParams::ToJson(const LogLineHeaderParsingParams& params)
+{
+    Json::Value root;
+
+    root["GroupNameForGrouping"] = params.GroupNameForGrouping.toStdString();
+
+    Json::Value groupInfoArray(Json::ValueType::arrayValue);
+    for (const auto& groupInfo : params.HeaderGroupRegExps)
+    {
+        Json::Value value;
+        value["GroupName"] = groupInfo.first.toStdString();
+        value["GroupRegExpString"] = groupInfo.second.toStdString();
+
+        groupInfoArray.append(value);
+    }
+    root["HeaderGroupRegExps"] = groupInfoArray;
+
+    std::unique_ptr<Json::StreamWriter> writer(Json::StreamWriterBuilder().newStreamWriter());
+    std::stringstream ss;
+    writer->write(root, &ss);
+    return QString::fromStdString(ss.str());
 }
