@@ -307,18 +307,17 @@ void LogViewMainWindow::LoadLogView()
     Invalidate();
 }
 
-void LogViewMainWindow::slot_EventSelected(Event event)
+void LogViewMainWindow::slot_EventSelectionChanged(const EventGraphicsItem* /*previous*/, const EventGraphicsItem* current)
 {
-//    qDebug() << "*** Event item clicked:" << event.Name;
     gui_selectedEventView->clear();
 
-    if (event.Type == EventType::Single)
+    if (current->GetEvent().Type == EventType::Single)
     {
         QTreeWidgetItem* item = new QTreeWidgetItem(
                                     QStringList()
-                                        << QString::number(event.StartLine.Position.NumberInFile)
-                                        << event.StartLine.Line);
-        item->setBackgroundColor(1, event.ViewColor.toQColor());
+                                        << QString::number(current->GetEvent().StartLine.Position.NumberInFile)
+                                        << current->GetEvent().StartLine.Line);
+        item->setBackgroundColor(1, current->GetEvent().ViewColor.toQColor());
         gui_selectedEventView->addTopLevelItem(item);
     }
     else
@@ -326,24 +325,26 @@ void LogViewMainWindow::slot_EventSelected(Event event)
         {
             QTreeWidgetItem* item = new QTreeWidgetItem(
                                         QStringList()
-                                            << QString::number(event.StartLine.Position.NumberInFile)
-                                            << event.StartLine.Line);
-            item->setBackgroundColor(1, event.ViewColor.toQColor());
+                                            << QString::number(current->GetEvent().StartLine.Position.NumberInFile)
+                                            << current->GetEvent().StartLine.Line);
+            item->setBackgroundColor(1, current->GetEvent().ViewColor.toQColor());
             gui_selectedEventView->addTopLevelItem(item);
         }
 
-        QStringList lines = LoadFileBlockToStrings(m_loadedFile, event.StartLine.Position.Offset, event.EndLine.Position.Offset);
+        QStringList lines = LoadFileBlockToStrings(
+                                m_loadedFile,
+                                current->GetEvent().StartLine.Position.Offset, current->GetEvent().EndLine.Position.Offset);
 
         for (int i = 1; i < lines.size(); ++i)
         {
-            if (m_groupExtractor->GetGroupFromLine(lines[i]) != event.Group)
+            if (m_groupExtractor->GetGroupFromLine(lines[i]) != current->GetEvent().Group)
             {
                 continue;
             }
 
             QTreeWidgetItem* item = new QTreeWidgetItem(
                                         QStringList()
-                                            << QString::number(event.StartLine.Position.NumberInFile + i)
+                                            << QString::number(current->GetEvent().StartLine.Position.NumberInFile + i)
                                             << lines[i]);
             gui_selectedEventView->addTopLevelItem(item);
         }
@@ -351,9 +352,9 @@ void LogViewMainWindow::slot_EventSelected(Event event)
         {
             QTreeWidgetItem* item = new QTreeWidgetItem(
                                         QStringList()
-                                            << QString::number(event.EndLine.Position.NumberInFile)
-                                            << event.EndLine.Line);
-            item->setBackgroundColor(1, event.ViewColor.toQColor());
+                                            << QString::number(current->GetEvent().EndLine.Position.NumberInFile)
+                                            << current->GetEvent().EndLine.Line);
+            item->setBackgroundColor(1, current->GetEvent().ViewColor.toQColor());
             gui_selectedEventView->addTopLevelItem(item);
         }
     }
@@ -411,8 +412,8 @@ void LogViewMainWindow::CreateMenuBar()
 
 void LogViewMainWindow::CreateConnetions()
 {
-    connect(gui_EventsViewScene, SIGNAL(EventSelected(Event)),
-            this, SLOT(slot_EventSelected(Event)),
+    connect(gui_EventsViewScene, SIGNAL(EventSelectionChanged(const EventGraphicsItem*, const EventGraphicsItem*)),
+            this, SLOT(slot_EventSelectionChanged(const EventGraphicsItem*, const EventGraphicsItem*)),
             Qt::QueuedConnection);
 
     connect(act_openFile, SIGNAL(triggered()),

@@ -4,9 +4,7 @@
 #include <QObject>
 #include <QGraphicsScene>
 
-
 #include "EventGraphicsItem.h"
-
 
 class EventsGraphicsScene : public QGraphicsScene, public IEventGraphicsItemSelectionCallback
 {
@@ -15,10 +13,13 @@ public:
     explicit EventsGraphicsScene(QObject *parent = nullptr);
 
 signals:
-    void EventSelected(Event event);
+    void EventSelectionChanged(const EventGraphicsItem* previous, const EventGraphicsItem* current);
 
 private:
-    void OnEventSelection(const Event& event) override;
+    void OnEventSelection(EventGraphicsItem* eventGraphicsItem) override;
+
+private:
+    EventGraphicsItem* m_selectedEventItem;
 };
 
 

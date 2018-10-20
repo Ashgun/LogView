@@ -15,7 +15,8 @@ EventGraphicsItem::EventGraphicsItem(const Event& event, qreal x, qreal y, qreal
                                      IEventGraphicsItemSelectionCallback& selectionCallback) :
     QGraphicsRectItem (x, y - ItemViewParams::ySpace, w, h + ItemViewParams::ySpace),
     m_event(event),
-    m_selectionCallback(selectionCallback)
+    m_selectionCallback(selectionCallback),
+    m_selected(false)
 {
     setRect(x, y - ItemViewParams::ySpace, w, h + ItemViewParams::ySpace);
     setZValue(m_event.Level);
@@ -26,20 +27,45 @@ int EventGraphicsItem::type() const
     return  UserType + 2;
 }
 
+void EventGraphicsItem::Select()
+{
+    m_selected = true;
+    update();
+}
+
+void EventGraphicsItem::Unselect()
+{
+    m_selected = false;
+    update();
+}
+
+const Event&EventGraphicsItem::GetEvent() const
+{
+    return m_event;
+}
+
 void EventGraphicsItem::mousePressEvent(QGraphicsSceneMouseEvent* /*event*/)
 {
-//    qDebug() << "Event item clicked:" << m_event.Name;
-//    emit EventSelected(m_event);
-    m_selectionCallback.OnEventSelection(m_event);
+    m_selectionCallback.OnEventSelection(this);
 }
 
 void EventGraphicsItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /*option*/, QWidget* /*widget*/)
 {
-    QColor color(m_event.ViewColor.R, m_event.ViewColor.G, m_event.ViewColor.B);
+    QColor color = m_event.ViewColor.toQColor();
     const auto currentRect = rect();
 
-    painter->setPen(QPen(Qt::black, 1));
+//    painter->setPen(QPen(Qt::black, 1));
 //    painter->drawLine(-10, currentRect.y(), 5000, currentRect.y());
+
+    if (m_selected)
+    {
+        QColor invertedColor(255 - color.red(), 255 - color.green(), 255 - color.blue());
+        painter->setPen(QPen(invertedColor, 5));
+    }
+    else
+    {
+        painter->setPen(QPen(Qt::black, 1));
+    }
 
     painter->setBrush(QBrush(color));
     painter->drawRect(currentRect);

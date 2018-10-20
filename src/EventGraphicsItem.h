@@ -7,10 +7,12 @@
 
 #include <functional>
 
+class EventGraphicsItem;
+
 class IEventGraphicsItemSelectionCallback
 {
 public:
-    virtual void OnEventSelection(const Event& event) = 0;
+    virtual void OnEventSelection(EventGraphicsItem* eventGraphicsItem) = 0;
 
     virtual ~IEventGraphicsItemSelectionCallback() = default;
 };
@@ -23,6 +25,11 @@ public:
 
     int type() const override;
 
+    void Select();
+    void Unselect();
+
+    const Event& GetEvent() const;
+
 protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
 //    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
@@ -31,6 +38,8 @@ protected:
 private:
     const Event m_event;
     IEventGraphicsItemSelectionCallback& m_selectionCallback;
+
+    bool m_selected;
 };
 
 #endif // EVENTGRAPHICSITEM_H

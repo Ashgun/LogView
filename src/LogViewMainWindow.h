@@ -30,7 +30,7 @@ public:
 signals:
 
 protected slots:
-    void slot_EventSelected(Event event);
+    void slot_EventSelectionChanged(const EventGraphicsItem* previous, const EventGraphicsItem* current);
 
     void slot_act_openFileTriggred();
 
