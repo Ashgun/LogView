@@ -23,6 +23,8 @@ public:
     explicit EventGraphicsItem(const Event& event, qreal x, qreal y, qreal w, qreal h,
                                IEventGraphicsItemSelectionCallback& selectionCallback);
 
+    void ScaleHorizontally(qreal horizontalScale);
+
     int type() const override;
 
     void Select();
@@ -40,6 +42,7 @@ private:
     IEventGraphicsItemSelectionCallback& m_selectionCallback;
 
     bool m_selected;
+    qreal m_horizontalScale;
 };
 
 #endif // EVENTGRAPHICSITEM_H

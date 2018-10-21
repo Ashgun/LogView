@@ -422,11 +422,25 @@ void LogViewMainWindow::CreateConnetions()
 
 void LogViewMainWindow::Redraw()
 {
-    gui_EventsViewScene->clear();
-    m_eventsToView = GenerateEventViewItems(m_eventLevels, gui_EventsViewScene->width(), *gui_EventsViewScene);
-    for (auto& eventViewItem : m_eventsToView)
+    if (m_eventsToView.empty())
     {
-        gui_EventsViewScene->addItem(eventViewItem);
+        gui_EventsViewScene->clear();
+        m_eventsToView = GenerateEventViewItems(m_eventLevels, gui_EventsViewScene->width(), *gui_EventsViewScene);
+        for (auto& eventViewItem : m_eventsToView)
+        {
+            gui_EventsViewScene->addItem(eventViewItem);
+        }
+
+        m_previosGraphicsSceneWidth = gui_EventsViewScene->width();
+    }
+    else
+    {
+        for (auto& eventViewItem : m_eventsToView)
+        {
+            eventViewItem->ScaleHorizontally(gui_EventsViewScene->width() / m_previosGraphicsSceneWidth);
+        }
+
+        m_previosGraphicsSceneWidth = gui_EventsViewScene->width();
     }
 
     gui_EventsView->horizontalScrollBar()->setValue(gui_EventsView->horizontalScrollBar()->minimum());

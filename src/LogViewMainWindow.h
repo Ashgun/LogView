@@ -50,6 +50,7 @@ private:
     QMenuBar* gui_mainMenuBar;
     QGraphicsView* gui_EventsView;
     EventsGraphicsScene* gui_EventsViewScene;
+    qreal m_previosGraphicsSceneWidth;
 
     QTreeWidget* gui_selectedEventView;
 

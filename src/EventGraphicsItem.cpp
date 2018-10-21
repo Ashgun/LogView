@@ -16,10 +16,20 @@ EventGraphicsItem::EventGraphicsItem(const Event& event, qreal x, qreal y, qreal
     QGraphicsRectItem (x, y - ItemViewParams::ySpace, w, h + ItemViewParams::ySpace),
     m_event(event),
     m_selectionCallback(selectionCallback),
-    m_selected(false)
+    m_selected(false),
+    m_horizontalScale(1.0)
 {
-    setRect(x, y - ItemViewParams::ySpace, w, h + ItemViewParams::ySpace);
+    setRect(x * m_horizontalScale, y - ItemViewParams::ySpace, w * m_horizontalScale, h + ItemViewParams::ySpace);
     setZValue(m_event.Level);
+}
+
+void EventGraphicsItem::ScaleHorizontally(qreal horizontalScale)
+{
+    m_horizontalScale = horizontalScale;
+    const QRectF currentrect = rect();
+    setRect(currentrect.x() * m_horizontalScale, currentrect.y(),
+            currentrect.width() * m_horizontalScale, currentrect.height());
+    update();
 }
 
 int EventGraphicsItem::type() const
