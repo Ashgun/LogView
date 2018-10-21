@@ -50,14 +50,12 @@ private:
     QMenuBar* gui_mainMenuBar;
     QGraphicsView* gui_EventsView;
     EventsGraphicsScene* gui_EventsViewScene;
-    qreal m_previosGraphicsSceneWidth;
 
     QTreeWidget* gui_selectedEventView;
 
     QAction* act_openFile;
 
     std::unique_ptr<IPositionedLinesStorage> m_linesStorage;
-    std::list<EventGraphicsItem*> m_eventsToView;
     std::vector<std::vector<Event>> m_eventLevels;
 
     QString m_loadedFile;

@@ -12,6 +12,9 @@ class EventsGraphicsScene : public QGraphicsScene, public IEventGraphicsItemSele
 public:
     explicit EventsGraphicsScene(QObject *parent = nullptr);
 
+    void DrawEventItems(const std::vector<std::vector<Event>>& eventLevels);
+    void UpdateViewportParams(const std::size_t linesCount, const int baseViewPortWidth);
+
 signals:
     void EventSelectionChanged(const EventGraphicsItem* previous, const EventGraphicsItem* current);
 
@@ -20,6 +23,9 @@ private:
 
 private:
     EventGraphicsItem* m_selectedEventItem;
+
+    std::list<EventGraphicsItem*> m_eventsToView;
+    qreal m_previosGraphicsSceneWidth = 1.0;
 };
 
 
