@@ -32,6 +32,7 @@ public:
         QColor toQColor() const;
         QString toColorCode() const;
         static Color fromColorCode(const QString& colorCode);
+        static Color fromQColor(const QColor& color);
     };
 
 public:

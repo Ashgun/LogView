@@ -824,6 +824,15 @@ IMatchableEventPattern::Color IMatchableEventPattern::Color::fromColorCode(const
     return color;
 }
 
+IMatchableEventPattern::Color IMatchableEventPattern::Color::fromQColor(const QColor& color)
+{
+    IMatchableEventPattern::Color result;
+    result.R = static_cast<quint8>(color.red());
+    result.G = static_cast<quint8>(color.green());
+    result.B = static_cast<quint8>(color.blue());
+    return result;
+}
+
 QString IEventGroupExtractor::GetGroupFromLine(const PositionedLine& line) const
 {
     return GetGroupFromLine(line.Line);

@@ -36,7 +36,12 @@ SOURCES += src/main.cpp \
     src/CustomItem.cpp \
     src/EventGraphicsItem.cpp \
     src/EventsGraphicsScene.cpp \
-    src/LogLineHeaderParsingParamsEditWidget.cpp
+    src/LogLineHeaderParsingParamsEditWidget.cpp \
+    src/ColorSelectionViewWidget.cpp \
+    src/LinePatternEditWidget.cpp \
+    src/SingleLinePatternEditWidget.cpp \
+    src/EventPatternEditWidget.cpp \
+    src/ExtendLinePatternEditWidget.cpp
 
 HEADERS += \
     src/ILogLineParser.h \
@@ -60,4 +65,9 @@ HEADERS += \
     src/CustomItem.h \
     src/EventGraphicsItem.h \
     src/EventsGraphicsScene.h \
-    src/LogLineHeaderParsingParamsEditWidget.h
+    src/LogLineHeaderParsingParamsEditWidget.h \
+    src/ColorSelectionViewWidget.h \
+    src/LinePatternEditWidget.h \
+    src/SingleLinePatternEditWidget.h \
+    src/EventPatternEditWidget.h \
+    src/ExtendLinePatternEditWidget.h

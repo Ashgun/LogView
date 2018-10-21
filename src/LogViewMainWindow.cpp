@@ -11,7 +11,6 @@
 #include "BaseLinePositionStorage.h"
 #include "BasePositionedLinesStorage.h"
 #include "CustomItem.h"
-#include "EventGraphicsItem.h"
 #include "Events.h"
 #include "FilesIndexer.h"
 #include "IPositionedLinesStorage.h"
