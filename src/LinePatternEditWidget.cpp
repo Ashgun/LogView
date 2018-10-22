@@ -32,9 +32,7 @@ LinePatternEditWidget::LinePatternEditWidget(QWidget *parent) : QWidget(parent)
 LinePatternEditWidget::LinePatternEditWidget(const EventPattern& pattern, QWidget* parent) :
     LinePatternEditWidget(parent)
 {
-    gui_patternLineEdit->setText(pattern.Pattern);
-    gui_stringType->setChecked(pattern.Type == EventPattern::PatternType::String);
-    gui_regExpType->setChecked(pattern.Type == EventPattern::PatternType::RegExp);
+    SetEventPattern(pattern);
 }
 
 LinePatternEditWidget::PatternInfo LinePatternEditWidget::GetInfo() const
@@ -50,4 +48,11 @@ EventPattern LinePatternEditWidget::GetEventPattern() const
     return info.second == EventPattern::PatternType::String ?
             EventPattern::CreateStringPattern(info.first) :
             EventPattern::CreateRegExpPattern(info.first);
+}
+
+void LinePatternEditWidget::SetEventPattern(const EventPattern& pattern)
+{
+    gui_patternLineEdit->setText(pattern.Pattern);
+    gui_stringType->setChecked(pattern.Type == EventPattern::PatternType::String);
+    gui_regExpType->setChecked(pattern.Type == EventPattern::PatternType::RegExp);
 }

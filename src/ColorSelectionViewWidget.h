@@ -13,6 +13,7 @@ public:
     ColorSelectionViewWidget(const IMatchableEventPattern::Color& color, QWidget *parent = nullptr);
 
     IMatchableEventPattern::Color GetColor() const;
+    void SetColor(const IMatchableEventPattern::Color& color);
 
 protected slots:
     void mousePressEvent(QMouseEvent * event) override;

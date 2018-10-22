@@ -7,21 +7,20 @@ EventPatternEditWidget::EventPatternEditWidget(QWidget *parent) : QWidget(parent
     gui_SingleLinePatternEditWidget = new SingleLinePatternEditWidget();
     gui_ExtendLinePatternEditWidget = new ExtendLinePatternEditWidget();
 
-    BuildGUI();
+    gui_editWidgetsTab = new QTabWidget;
+    gui_editWidgetsTab->setMovable(false);
+    gui_editWidgetsTab->addTab(gui_SingleLinePatternEditWidget, tr("Single line event"));
+    gui_editWidgetsTab->addTab(gui_ExtendLinePatternEditWidget, tr("Multiple line event"));
+
+    QVBoxLayout* box = new QVBoxLayout;
+    box->addWidget(gui_editWidgetsTab);
+    setLayout(box);
 }
 
-EventPatternEditWidget::EventPatternEditWidget(const IMatchableEventPattern* pattern, QWidget* parent) : QWidget(parent)
+EventPatternEditWidget::EventPatternEditWidget(const IMatchableEventPattern* pattern, QWidget* parent) :
+    EventPatternEditWidget(parent)
 {
-    if (pattern->GetType() == EventType::Single)
-    {
-        gui_SingleLinePatternEditWidget = new SingleLinePatternEditWidget(pattern);
-        gui_ExtendLinePatternEditWidget = new ExtendLinePatternEditWidget();
-    }
-    else
-    {
-        gui_SingleLinePatternEditWidget = new SingleLinePatternEditWidget();
-        gui_ExtendLinePatternEditWidget = new ExtendLinePatternEditWidget(pattern);
-    }
+    SetLinePattern(pattern);
 }
 
 IMatchableEventPatternPtr EventPatternEditWidget::GetPattern() const
@@ -38,14 +37,16 @@ IMatchableEventPatternPtr EventPatternEditWidget::GetPattern() const
     }
 }
 
-void EventPatternEditWidget::BuildGUI()
+void EventPatternEditWidget::SetLinePattern(const IMatchableEventPattern* pattern)
 {
-    gui_editWidgetsTab = new QTabWidget;
-    gui_editWidgetsTab->setMovable(false);
-    gui_editWidgetsTab->addTab(gui_SingleLinePatternEditWidget, tr("Single line event"));
-    gui_editWidgetsTab->addTab(gui_ExtendLinePatternEditWidget, tr("Multiple line event"));
-
-    QVBoxLayout* box = new QVBoxLayout;
-    box->addWidget(gui_editWidgetsTab);
-    setLayout(box);
+    if (pattern->GetType() == EventType::Single)
+    {
+        gui_SingleLinePatternEditWidget->SetLinePattern(pattern);
+        gui_editWidgetsTab->setCurrentIndex(0);
+    }
+    else
+    {
+        gui_ExtendLinePatternEditWidget->SetLinePattern(pattern);
+        gui_editWidgetsTab->setCurrentIndex(1);
+    }
 }

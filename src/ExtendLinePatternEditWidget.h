@@ -17,13 +17,11 @@ public:
     ExtendLinePatternEditWidget(const IMatchableEventPattern* pattern, QWidget *parent = nullptr);
 
     IMatchableEventPatternPtr GetPattern() const;
+    void SetLinePattern(const IMatchableEventPattern* pattern);
 
 signals:
 
 public slots:
-
-private:
-    void BuildGUI();
 
 private:
     QLineEdit* gui_patternName;

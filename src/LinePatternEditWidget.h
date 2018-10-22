@@ -21,6 +21,7 @@ public:
 
     PatternInfo GetInfo() const;
     EventPattern GetEventPattern() const;
+    void SetEventPattern(const EventPattern& pattern);
 
 signals:
 

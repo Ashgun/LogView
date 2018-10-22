@@ -21,6 +21,12 @@ IMatchableEventPattern::Color ColorSelectionViewWidget::GetColor() const
     return IMatchableEventPattern::Color::fromQColor(m_color);
 }
 
+void ColorSelectionViewWidget::SetColor(const IMatchableEventPattern::Color& color)
+{
+    m_color = color.toQColor();
+    UpdateColorView();
+}
+
 void ColorSelectionViewWidget::mousePressEvent(QMouseEvent* /*event*/)
 {
     m_color = QColorDialog::getColor(m_color, this);

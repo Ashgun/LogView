@@ -9,18 +9,20 @@ SingleLinePatternEditWidget::SingleLinePatternEditWidget(QWidget *parent) : QWid
     gui_patternLineEdit = new LinePatternEditWidget();
     gui_viewColorEdit = new ColorSelectionViewWidget();
 
-    BuildGUI();
+    QVBoxLayout* box = new QVBoxLayout;
+
+    box->addWidget(new QLabel(tr("Pattern name:")));
+    box->addWidget(gui_patternName);
+    box->addWidget(gui_patternLineEdit);
+    box->addWidget(gui_viewColorEdit);
+
+    setLayout(box);
 }
 
-SingleLinePatternEditWidget::SingleLinePatternEditWidget(const IMatchableEventPattern* patternBase, QWidget* parent) : QWidget(parent)
+SingleLinePatternEditWidget::SingleLinePatternEditWidget(const IMatchableEventPattern* patternBase, QWidget* parent) :
+    SingleLinePatternEditWidget(parent)
 {
-    const SingleEventPattern* pattern = dynamic_cast<const SingleEventPattern*>(patternBase);
-
-    gui_patternName = new QLineEdit(pattern->Name);
-    gui_patternLineEdit = new LinePatternEditWidget(pattern->Pattern);
-    gui_viewColorEdit = new ColorSelectionViewWidget(pattern->ViewColor);
-
-    BuildGUI();
+    SetLinePattern(patternBase);
 }
 
 IMatchableEventPatternPtr SingleLinePatternEditWidget::GetPattern() const
@@ -31,14 +33,11 @@ IMatchableEventPatternPtr SingleLinePatternEditWidget::GetPattern() const
                 gui_viewColorEdit->GetColor());
 }
 
-void SingleLinePatternEditWidget::BuildGUI()
+void SingleLinePatternEditWidget::SetLinePattern(const IMatchableEventPattern* patternBase)
 {
-    QVBoxLayout* box = new QVBoxLayout;
+    const SingleEventPattern* pattern = dynamic_cast<const SingleEventPattern*>(patternBase);
 
-    box->addWidget(new QLabel(tr("Pattern name:")));
-    box->addWidget(gui_patternName);
-    box->addWidget(gui_patternLineEdit);
-    box->addWidget(gui_viewColorEdit);
-
-    setLayout(box);
+    gui_patternName->setText(pattern->Name);
+    gui_patternLineEdit->SetEventPattern(pattern->Pattern);
+    gui_viewColorEdit->SetColor(pattern->ViewColor);
 }
