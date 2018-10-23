@@ -6,6 +6,8 @@
 
 LinePatternEditWidget::LinePatternEditWidget(QWidget *parent) : QWidget(parent)
 {
+    setMinimumWidth(200);
+
     gui_patternLineEdit = new QLineEdit();
     gui_TypeSelectionGroup = new QGroupBox(tr("Pattern type"));
 

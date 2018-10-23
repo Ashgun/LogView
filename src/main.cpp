@@ -325,6 +325,46 @@ int RunAll(int argc, char *argv[])
     return a.exec();
 }
 
+#include "EventPatternsEditDialog.h"
+
+int EventPatternsEditDialog_test(int argc, char *argv[])
+{
+    QApplication a(argc, argv);
+
+    EventPatternsHierarchyMatcher lineSelector;
+    lineSelector.EventPatterns.AddEventPattern(
+        CreateExtendedEventPattern("Service works",
+            EventPattern::CreateStringPattern("Logging started"),
+            EventPattern::CreateStringPattern("Logging finished"),
+            CreateColor(128, 128, 128)));
+    lineSelector.EventPatterns.TopLevelNodes.back().AddSubEventPattern(
+        CreateSingleEventPattern("Accounts list obtained",
+            EventPattern::CreateStringPattern("[AccountRegistry] New accounts list obtained"),
+            CreateColor(128, 128, 0)));
+    lineSelector.EventPatterns.TopLevelNodes.back().AddSubEventPattern(
+                CreateExtendedEventPattern("Tenant backup",
+                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session started"),
+                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed successfully"),
+                    EventPattern::CreateStringPattern("[TenantBackupProcessor] Session completed with errors"),
+                    CreateColor(0, 128, 0), CreateColor(128, 0, 0)));
+    lineSelector.EventPatterns.TopLevelNodes.back().SubEvents.back().AddSubEventPattern(
+                CreateExtendedEventPattern("Mailbox backup",
+                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was started"),
+                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was finished"),
+                    EventPattern::CreateRegExpPattern("\\[UserBackupProcessor\\] Session #[0-9]+ was failed"),
+                    CreateColor(0, 255, 0), CreateColor(255, 0, 0)));
+    lineSelector.EventPatterns.TopLevelNodes.back().SubEvents.back().AddSubEventPattern(
+        CreateSingleEventPattern("Tenant session error",
+            EventPattern::CreateStringPattern("[TenantBackupProcessor] Session error"),
+            CreateColor(0, 0, 255)));
+
+    EventPatternsEditDialog window;
+    window.SetEventPatternsHierarchy(lineSelector.EventPatterns);
+    window.show();
+
+    return a.exec();
+}
+
 int main(int argc, char *argv[])
 {
 //    QCoreApplication a(argc, argv);
@@ -338,7 +378,9 @@ int main(int argc, char *argv[])
 
 //    ILogLineParser_Test();
 
-    RunAll(argc, argv);
+//    RunAll(argc, argv);
+
+    EventPatternsEditDialog_test(argc, argv);
 
     std::cout << "Finish" << std::endl;
 

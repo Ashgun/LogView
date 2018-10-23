@@ -93,63 +93,8 @@ bool ExtendedEventPattern::IsAltPatternMatched(const QString& line) const
     return m_lineMatcher.IsPatternMatched(line, AltEndPattern);
 }
 
-EventPatterns::EventPatterns()
-{
-}
-
-void EventPatterns::push_back(const SingleEventPattern& event)
-{
-    m_eventPatterns.push_back(event.Clone());
-}
-
-void EventPatterns::push_back(const ExtendedEventPattern& event)
-{
-    m_eventPatterns.push_back(event.Clone());
-}
-
-std::size_t EventPatterns::size() const
-{
-    return m_eventPatterns.size();
-}
-
-const IMatchableEventPattern&EventPatterns::operator[](const std::size_t index) const
-{
-    return *m_eventPatterns[index];
-}
-
-bool IsAnyEventMatched(const EventPatterns& events, const QString& line)
-{
-    for (std::size_t i = 0; i < events.size(); ++i)
-    {
-        if (events[i].IsPatternMatched(line))
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 namespace
 {
-
-bool IsAnyEventMatchedImpl(const EventPatternsHierarchyNode& eventsNode, const QString& line)
-{
-    if (eventsNode.Event->IsPatternMatched(line))
-    {
-        return true;
-    }
-
-    for (std::size_t i = 0; i < eventsNode.SubEvents.size(); ++i)
-    {
-        if (IsAnyEventMatchedImpl(eventsNode.SubEvents[i], line))
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
 
 int GetLevelInHierarchyImpl(const EventPatternsHierarchyNode& eventsNode, const QString& line, int currentLevel)
 {
@@ -171,19 +116,6 @@ int GetLevelInHierarchyImpl(const EventPatternsHierarchyNode& eventsNode, const 
 }
 
 } // namespace
-
-bool EventPatternsHierarchyMatcher::IsAnyEventMatched(const QString& line) const
-{
-    for (std::size_t i = 0; i < EventPatterns.TopLevelNodes.size(); ++i)
-    {
-        if (IsAnyEventMatchedImpl(EventPatterns.TopLevelNodes[i], line))
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
 
 int EventPatternsHierarchyMatcher::GetLevelInHierarchy(const QString& line) const
 {

@@ -21,6 +21,7 @@ ExtendLinePatternEditWidget::ExtendLinePatternEditWidget(QWidget *parent) : QWid
     box->addWidget(gui_endViewColorEdit);
     box->addWidget(gui_altEndPatternLineEdit);
     box->addWidget(gui_altEndViewColorEdit);
+    box->addStretch();
 
     setLayout(box);
 }

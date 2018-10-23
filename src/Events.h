@@ -107,20 +107,6 @@ IMatchableEventPatternPtr CreateExtendedEventPattern(QString const& name, EventP
     EventPattern const& endPattern, EventPattern const& altEndPattern,
     const IMatchableEventPattern::Color& successColor, const IMatchableEventPattern::Color& altColor);
 
-class EventPatterns
-{
-public:
-    EventPatterns();
-
-    void push_back(SingleEventPattern const& event);
-    void push_back(ExtendedEventPattern const& event);
-    std::size_t size() const;
-    IMatchableEventPattern const& operator[](std::size_t const index) const;
-
-private:
-    std::vector<IMatchableEventPatternPtr> m_eventPatterns;
-};
-
 struct EventPatternsHierarchyNode
 {
     EventPatternsHierarchyNode() = default;

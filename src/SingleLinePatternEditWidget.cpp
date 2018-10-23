@@ -15,6 +15,7 @@ SingleLinePatternEditWidget::SingleLinePatternEditWidget(QWidget *parent) : QWid
     box->addWidget(gui_patternName);
     box->addWidget(gui_patternLineEdit);
     box->addWidget(gui_viewColorEdit);
+    box->addStretch();
 
     setLayout(box);
 }

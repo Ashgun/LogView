@@ -7,9 +7,17 @@ EventPatternEditWidget::EventPatternEditWidget(QWidget *parent) : QWidget(parent
     gui_SingleLinePatternEditWidget = new SingleLinePatternEditWidget();
     gui_ExtendLinePatternEditWidget = new ExtendLinePatternEditWidget();
 
+    QWidget* singleLineEventEditContainer = new QWidget;
+    {
+        QVBoxLayout* box = new QVBoxLayout;
+        box->addWidget(gui_SingleLinePatternEditWidget);
+        box->addStretch();
+        singleLineEventEditContainer->setLayout(box);
+    }
+
     gui_editWidgetsTab = new QTabWidget;
     gui_editWidgetsTab->setMovable(false);
-    gui_editWidgetsTab->addTab(gui_SingleLinePatternEditWidget, tr("Single line event"));
+    gui_editWidgetsTab->addTab(singleLineEventEditContainer, tr("Single line event"));
     gui_editWidgetsTab->addTab(gui_ExtendLinePatternEditWidget, tr("Multiple line event"));
 
     QVBoxLayout* box = new QVBoxLayout;

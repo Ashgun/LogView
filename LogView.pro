@@ -41,7 +41,9 @@ SOURCES += src/main.cpp \
     src/LinePatternEditWidget.cpp \
     src/SingleLinePatternEditWidget.cpp \
     src/EventPatternEditWidget.cpp \
-    src/ExtendLinePatternEditWidget.cpp
+    src/ExtendLinePatternEditWidget.cpp \
+    src/EventPatternsEditDialog.cpp \
+    src/EventsTreeWidget.cpp
 
 HEADERS += \
     src/ILogLineParser.h \
@@ -70,4 +72,6 @@ HEADERS += \
     src/LinePatternEditWidget.h \
     src/SingleLinePatternEditWidget.h \
     src/EventPatternEditWidget.h \
-    src/ExtendLinePatternEditWidget.h
+    src/ExtendLinePatternEditWidget.h \
+    src/EventPatternsEditDialog.h \
+    src/EventsTreeWidget.h

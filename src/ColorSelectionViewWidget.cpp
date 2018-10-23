@@ -3,16 +3,17 @@
 #include <QColorDialog>
 
 ColorSelectionViewWidget::ColorSelectionViewWidget(QWidget* parent) :
-    QWidget(parent),
-    m_color(Qt::white)
+    ColorSelectionViewWidget(IMatchableEventPattern::Color::fromQColor(QColor(Qt::white)), parent)
 {
-    UpdateColorView();
 }
 
 ColorSelectionViewWidget::ColorSelectionViewWidget(const IMatchableEventPattern::Color& color, QWidget* parent) :
-    QWidget(parent),
+    QFrame(parent),
     m_color(color.toQColor())
 {
+    setFrameStyle(QFrame::Panel | QFrame::Raised);
+    setLineWidth(1);
+    setMinimumSize(20, 20);
     UpdateColorView();
 }
 
@@ -29,8 +30,13 @@ void ColorSelectionViewWidget::SetColor(const IMatchableEventPattern::Color& col
 
 void ColorSelectionViewWidget::mousePressEvent(QMouseEvent* /*event*/)
 {
-    m_color = QColorDialog::getColor(m_color, this);
-    UpdateColorView();
+    QColor newColor = QColorDialog::getColor(m_color, this);
+
+    if (newColor.isValid())
+    {
+        m_color = newColor;
+        UpdateColorView();
+    }
 }
 
 void ColorSelectionViewWidget::UpdateColorView()

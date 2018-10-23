@@ -1,11 +1,11 @@
 #ifndef COLORSELECTIONVIEWWIDGET_H
 #define COLORSELECTIONVIEWWIDGET_H
 
-#include <QWidget>
+#include <QFrame>
 
 #include "Events.h"
 
-class ColorSelectionViewWidget : public QWidget
+class ColorSelectionViewWidget : public QFrame
 {
     Q_OBJECT
 public:
