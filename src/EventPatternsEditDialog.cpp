@@ -99,6 +99,7 @@ void EventPatternsEditDialog::slot_eventsTree_currentItemChanged(QTreeWidgetItem
     if (previous != nullptr)
     {
         m_mapTreeItemsToEventPatterns[previous] = gui_eventsEdit->GetPattern();
+        previous->setText(0, m_mapTreeItemsToEventPatterns[previous]->Name);
     }
 
     if (current != nullptr)
