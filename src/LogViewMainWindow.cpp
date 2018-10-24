@@ -16,6 +16,8 @@
 #include "IPositionedLinesStorage.h"
 #include "RegExpLogLineParser.h"
 
+#include "EventPatternsEditDialog.h"
+
 namespace
 {
 
@@ -156,6 +158,22 @@ void LogViewMainWindow::LoadLog(
 
     EventPatternsHierarchyMatcher lineSelector;
     EventPatternsHierarchy::fromJson(eventsParsingConfigJson, lineSelector.EventPatterns);
+
+    if (false)
+    {
+        EventPatternsEditDialog window;
+        window.SetEventPatternsHierarchy(lineSelector.EventPatterns);
+        int code = window.exec();
+        if (code == QDialog::Accepted)
+        {
+            lineSelector.EventPatterns = window.GetEventPatternsHierarchy();
+//            qDebug() << EventPatternsHierarchy::toJson(lineSelector.EventPatterns);
+        }
+        else
+        {
+//            qDebug() << "rejected";
+        }
+    }
 
     FilesIndexer indexer(linePositionStorage, *m_linesStorage, lineSelector);
     indexer.AddFileIndexes(filename);

@@ -360,9 +360,18 @@ int EventPatternsEditDialog_test(int argc, char *argv[])
 
     EventPatternsEditDialog window;
     window.SetEventPatternsHierarchy(lineSelector.EventPatterns);
-    window.show();
+    int code = window.exec();
+    if (code == QDialog::Accepted)
+    {
+        lineSelector.EventPatterns = window.GetEventPatternsHierarchy();
+        qDebug() << EventPatternsHierarchy::toJson(lineSelector.EventPatterns);
+    }
+    else
+    {
+        qDebug() << "rejected";
+    }
 
-    return a.exec();
+    return 0;//a.exec();
 }
 
 int main(int argc, char *argv[])
@@ -378,9 +387,9 @@ int main(int argc, char *argv[])
 
 //    ILogLineParser_Test();
 
-//    RunAll(argc, argv);
+    RunAll(argc, argv);
 
-    EventPatternsEditDialog_test(argc, argv);
+//    EventPatternsEditDialog_test(argc, argv);
 
     std::cout << "Finish" << std::endl;
 

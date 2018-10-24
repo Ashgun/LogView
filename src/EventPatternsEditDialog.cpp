@@ -25,6 +25,23 @@ void AddSubEventPatternsToTree(
     }
 }
 
+void AddTreeItemChildrenToHierarchy(
+        QTreeWidgetItem* parent,
+        const std::map<QTreeWidgetItem*, IMatchableEventPatternPtr>& mapTreeItemsToEventPatterns,
+        EventPatternsHierarchyNode& target)
+{
+    for (int i = 0; i < parent->childCount(); ++i)
+    {
+        auto item = parent->child(i);
+        target.AddSubEventPattern(mapTreeItemsToEventPatterns.at(item)->Clone());
+
+        if (item->childCount() > 0)
+        {
+            AddTreeItemChildrenToHierarchy(item, mapTreeItemsToEventPatterns, target.SubEvents.back());
+        }
+    }
+}
+
 } // namespace
 
 EventPatternsEditDialog::EventPatternsEditDialog(QWidget *parent) :
@@ -76,6 +93,24 @@ void EventPatternsEditDialog::SetEventPatternsHierarchy(const EventPatternsHiera
     gui_eventsTree->expandAll();
 }
 
+EventPatternsHierarchy EventPatternsEditDialog::GetEventPatternsHierarchy() const
+{
+    EventPatternsHierarchy result;
+
+    for (int i = 0; i < gui_eventsTree->topLevelItemCount(); ++i)
+    {
+        auto item = gui_eventsTree->topLevelItem(i);
+        result.AddEventPattern(m_mapTreeItemsToEventPatterns.at(item)->Clone());
+
+        if (item->childCount() > 0)
+        {
+            AddTreeItemChildrenToHierarchy(item, m_mapTreeItemsToEventPatterns, result.TopLevelNodes.back());
+        }
+    }
+
+    return result;
+}
+
 void EventPatternsEditDialog::slot_accepted()
 {
     QTreeWidgetItem* currentItem = gui_eventsTree->currentItem();
@@ -85,13 +120,13 @@ void EventPatternsEditDialog::slot_accepted()
     }
 
     qDebug() << "EventPatternsEditDialog::slot_accepted()";
-    close();
+    accept();
 }
 
 void EventPatternsEditDialog::slot_rejected()
 {
     qDebug() << "EventPatternsEditDialog::slot_rejected()";
-    close();
+    reject();
 }
 
 void EventPatternsEditDialog::slot_eventsTree_currentItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* previous)

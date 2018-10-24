@@ -20,6 +20,7 @@ public:
     explicit EventPatternsEditDialog(QWidget *parent = nullptr);
 
     void SetEventPatternsHierarchy(const EventPatternsHierarchy& eventPatternsHierarchy);
+    EventPatternsHierarchy GetEventPatternsHierarchy() const;
 
 signals:
 
