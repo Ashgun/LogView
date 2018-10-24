@@ -7,6 +7,7 @@
 #include <QMenuBar>
 #include <QAction>
 #include <QTreeWidget>
+#include <QShortcut>
 
 #include "EventsGraphicsScene.h"
 
@@ -36,11 +37,13 @@ protected slots:
 
     void resizeEvent(QResizeEvent* event);
 
+    void slot_act_copySelectedLinesToClipboard_Triggred();
+
 
 private:
     void CreateActions();
     void CreateMenuBar();
-    void CreateConnetions();
+    void CreateConnections();
 
     void Redraw();
     void UpdateViewportParams();
@@ -54,6 +57,8 @@ private:
     QTreeWidget* gui_selectedEventView;
 
     QAction* act_openFile;
+    QAction* act_copySelectedLinesToClipboard;
+    QShortcut* shortcut_copySelectedLinesToClipboard;
 
     std::unique_ptr<IPositionedLinesStorage> m_linesStorage;
     std::vector<std::vector<Event>> m_eventLevels;

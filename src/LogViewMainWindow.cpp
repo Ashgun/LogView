@@ -1,5 +1,7 @@
 #include "LogViewMainWindow.h"
 
+#include <QApplication>
+#include <QClipboard>
 #include <QFile>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -142,7 +144,7 @@ LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
 
     CreateActions();
     CreateMenuBar();
-    CreateConnetions();
+    CreateConnections();
 }
 
 LogViewMainWindow::~LogViewMainWindow() = default;
@@ -288,24 +290,45 @@ void LogViewMainWindow::resizeEvent(QResizeEvent* /*event*/)
     Invalidate();
 }
 
+void LogViewMainWindow::slot_act_copySelectedLinesToClipboard_Triggred()
+{
+    QClipboard *clipboard = QApplication::clipboard();
+//    QString originalText = clipboard->text();
+
+    QString text;
+    for (int i = 0; i < gui_selectedEventView->topLevelItemCount(); ++i)
+    {
+        const auto item = gui_selectedEventView->topLevelItem(i);
+        text.append(item->text(1) + "\n");
+    }
+
+    clipboard->setText(text);
+}
+
 void LogViewMainWindow::CreateActions()
 {
-    act_openFile = new QAction("&Open log file");
+    act_openFile = new QAction(tr("&Open log file"));
+
+    act_copySelectedLinesToClipboard = new QAction(tr("Copy Selected data to clipboard"));
+    // Disabled because of conflicting with shortcut
+//    act_copySelectedLinesToClipboard->setShortcut(QKeySequence("Ctrl+C"));
+    shortcut_copySelectedLinesToClipboard = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_C), this);
 }
 
 void LogViewMainWindow::CreateMenuBar()
 {
     gui_mainMenuBar = new QMenuBar;
 
-    QMenu* fileMenu = new QMenu("&File");
+    QMenu* fileMenu = new QMenu(tr("&File"));
     fileMenu->addAction(act_openFile);
+    fileMenu->addAction(act_copySelectedLinesToClipboard);
 
     gui_mainMenuBar->addMenu(fileMenu);
 
     setMenuBar(gui_mainMenuBar);
 }
 
-void LogViewMainWindow::CreateConnetions()
+void LogViewMainWindow::CreateConnections()
 {
     connect(gui_EventsViewScene, SIGNAL(EventSelectionChanged(const EventGraphicsItem*, const EventGraphicsItem*)),
             this, SLOT(slot_EventSelectionChanged(const EventGraphicsItem*, const EventGraphicsItem*)),
@@ -313,6 +336,11 @@ void LogViewMainWindow::CreateConnetions()
 
     connect(act_openFile, SIGNAL(triggered()),
             this, SLOT(slot_act_openFileTriggred()), Qt::DirectConnection);
+
+    connect(act_copySelectedLinesToClipboard, SIGNAL(triggered()),
+            this, SLOT(slot_act_copySelectedLinesToClipboard_Triggred()), Qt::DirectConnection);
+    connect(shortcut_copySelectedLinesToClipboard, SIGNAL(activated()),
+            this, SLOT(slot_act_copySelectedLinesToClipboard_Triggred()), Qt::DirectConnection);
 }
 
 void LogViewMainWindow::Redraw()
