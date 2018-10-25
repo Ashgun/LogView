@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QDialog>
+#include <QPushButton>
 
 #include "EventPatternEditWidget.h"
 #include "EventsTreeWidget.h"
@@ -22,16 +23,24 @@ public:
     void SetEventPatternsHierarchy(const EventPatternsHierarchy& eventPatternsHierarchy);
     EventPatternsHierarchy GetEventPatternsHierarchy() const;
 
+private:
+    void UpdateItemByEventPatternEdit(QTreeWidgetItem *item);
+
 signals:
 
 protected slots:
     void slot_accepted();
     void slot_rejected();
     void slot_eventsTree_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
+    void slot_addEventPatternButton_clicked(bool);
+    void slot_deleteEventPatternButton_clicked(bool);
 
 private:
     EventsTreeWidget* gui_eventsTree;
     EventPatternEditWidget* gui_eventsEdit;
+
+    QPushButton* gui_addEventPatternButton;
+    QPushButton* gui_deleteEventPatternButton;
 
     std::map<QTreeWidgetItem*, IMatchableEventPatternPtr> m_mapTreeItemsToEventPatterns;
 };

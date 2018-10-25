@@ -358,17 +358,19 @@ int EventPatternsEditDialog_test(int argc, char *argv[])
             EventPattern::CreateStringPattern("[TenantBackupProcessor] Session error"),
             CreateColor(0, 0, 255)));
 
-    EventPatternsEditDialog window;
-    window.SetEventPatternsHierarchy(lineSelector.EventPatterns);
-    int code = window.exec();
-    if (code == QDialog::Accepted)
     {
-        lineSelector.EventPatterns = window.GetEventPatternsHierarchy();
-        qDebug() << EventPatternsHierarchy::toJson(lineSelector.EventPatterns);
-    }
-    else
-    {
-        qDebug() << "rejected";
+        EventPatternsEditDialog window;
+        window.SetEventPatternsHierarchy(lineSelector.EventPatterns);
+        int code = window.exec();
+        if (code == QDialog::Accepted)
+        {
+            lineSelector.EventPatterns = window.GetEventPatternsHierarchy();
+            qDebug() << EventPatternsHierarchy::toJson(lineSelector.EventPatterns);
+        }
+        else
+        {
+            qDebug() << "rejected";
+        }
     }
 
     return 0;//a.exec();

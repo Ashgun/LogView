@@ -169,7 +169,7 @@ void LogViewMainWindow::LoadLog(
         if (code == QDialog::Accepted)
         {
             lineSelector.EventPatterns = window.GetEventPatternsHierarchy();
-//            qDebug() << EventPatternsHierarchy::toJson(lineSelector.EventPatterns);
+//            qDebug() << EventPatternsHierarchy::toJson(lineSelector.EventPatterns).toStdString().c_str();
         }
         else
         {
