@@ -17,6 +17,10 @@ LogLineHeaderParsingParamsEditWidget::LogLineHeaderParsingParamsEditWidget(const
     groupingElementLayout->addWidget(new QLabel(tr("Header for grouping:")));
     groupingElementLayout->addWidget(gui_groupingHeaderCombo);
 
+    gui_sortingHeaderCombo = new QComboBox();
+    groupingElementLayout->addWidget(new QLabel(tr("Header for sorting:")));
+    groupingElementLayout->addWidget(gui_sortingHeaderCombo);
+
     gui_paramsTable = new QTableWidget(10, 2);
     gui_paramsTable->setHorizontalHeaderLabels(QStringList() << tr("Header") << tr("RegExp"));
 
@@ -36,6 +40,11 @@ LogLineHeaderParsingParamsEditWidget::LogLineHeaderParsingParamsEditWidget(const
     if (!params.GroupNameForGrouping.isEmpty())
     {
         gui_groupingHeaderCombo->setCurrentText(params.GroupNameForGrouping);
+    }
+
+    if (!params.SortingGroup.isEmpty())
+    {
+        gui_sortingHeaderCombo->setCurrentText(params.SortingGroup);
     }
 
     connect(gui_paramsTable, SIGNAL(itemChanged(QTableWidgetItem*)),
@@ -59,6 +68,7 @@ LogLineHeaderParsingParams LogLineHeaderParsingParamsEditWidget::GetParams() con
         result.HeaderGroupRegExps.append(QPair<QString, QString>(header, regExp + "\\s*"));
     }
     result.GroupNameForGrouping = gui_groupingHeaderCombo->currentText();
+    result.SortingGroup = gui_sortingHeaderCombo->currentText();
 
     return result;
 }
@@ -82,4 +92,9 @@ void LogLineHeaderParsingParamsEditWidget::slot_paramsTable_itemChanged(QTableWi
     gui_groupingHeaderCombo->addItems(QStringList(items.toList()));
 
     gui_groupingHeaderCombo->setCurrentText(item->text());
+
+    gui_sortingHeaderCombo->clear();
+    gui_sortingHeaderCombo->addItems(QStringList(items.toList()));
+
+    gui_sortingHeaderCombo->setCurrentText(item->text());
 }

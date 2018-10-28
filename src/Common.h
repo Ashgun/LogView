@@ -6,6 +6,9 @@
 namespace Constants
 {
 
+static const QString AppConfig = "Config.ini";
+static const QString LogLinesHeaderParsingConfig = "General/LogLinesHeaderParsingConfig";
+
 static const QString RecentDataConfig = "RecentData.ini";
 
 } // namespace Constants

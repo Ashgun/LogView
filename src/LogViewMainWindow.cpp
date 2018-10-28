@@ -6,6 +6,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QScrollBar>
+#include <QSettings>
 #include <QSplitter>
 
 #include <QDebug>
@@ -20,6 +21,10 @@
 
 #include "EventPatternsEditDialog.h"
 #include "LogFileWithConfigsOpenDialog.h"
+
+#include "Common.h"
+
+#include <stdexcept>
 
 namespace
 {
@@ -45,14 +50,14 @@ private:
     QString const m_groupName;
 };
 
-QStringList LoadFileBlockToStrings(const QString& filename, const qint64 from, const qint64 to)
+QStringList LoadFileBlockToStrings(const QString& filename, const quint64 from, const quint64 to)
 {
     QStringList resultList;
 
     QFile binfile(filename);
 
-    std::size_t const bufferSize = to - from;
-    std::vector<char> buffer(bufferSize + 1);
+    quint64 const bufferSize = to - from;
+    std::vector<char> buffer(static_cast<std::size_t>(bufferSize + 1));
     char* bufferData = buffer.data();
 
     const auto IsEndOfLineSymbol =
@@ -63,11 +68,11 @@ QStringList LoadFileBlockToStrings(const QString& filename, const qint64 from, c
 
     if (binfile.open(QIODevice::ReadOnly))
     {
-        binfile.seek(from);
+        binfile.seek(static_cast<qint64>(from));
 
         QDataStream in(&binfile);
 
-        std::size_t const readBytesCount = in.readRawData(bufferData, bufferSize);
+        std::size_t const readBytesCount = static_cast<std::size_t>(in.readRawData(bufferData, static_cast<int>(bufferSize)));
 
         std::size_t previousEol = 0;
         std::size_t currentEol = 0;
@@ -90,10 +95,42 @@ QStringList LoadFileBlockToStrings(const QString& filename, const qint64 from, c
     return resultList;
 }
 
+QString LoadFileToQString(const QString& filename)
+{
+    QFile f(filename);
+    if (!f.open(QFile::ReadOnly | QFile::Text))
+    {
+        return QString();
+    }
+
+    QTextStream in(&f);
+    const QString data = in.readAll();
+
+    return data;
+}
+
+LogLineHeaderParsingParams LoadLogLineHeaderParsingParams()
+{
+    QSettings settings(Constants::AppConfig, QSettings::Format::IniFormat);
+
+    if (settings.value(Constants::LogLinesHeaderParsingConfig).isNull())
+    {
+        throw std::runtime_error(
+                    std::string("Field ") +
+                    Constants::LogLinesHeaderParsingConfig.toStdString() +
+                    " not found in " +
+                    Constants::AppConfig.toStdString());
+    }
+
+    const QString headerParsingConfigJson = LoadFileToQString(settings.value(Constants::LogLinesHeaderParsingConfig).toString());
+    return LogLineHeaderParsingParams::FromJson(headerParsingConfigJson);
+}
+
 } // namespace
 
 LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
-    QMainWindow(parent)
+    QMainWindow(parent),
+    m_logLineHeaderParsingParams(LoadLogLineHeaderParsingParams())
 {
     qRegisterMetaType<Event>("Event");
     setMinimumSize(1024, 768);
@@ -151,7 +188,7 @@ LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
 LogViewMainWindow::~LogViewMainWindow() = default;
 
 void LogViewMainWindow::LoadLog(
-        const QString& filename, const QString& headerParsingConfigJson,
+        const QString& filename,
         const QString& eventsParsingConfigJson)
 {
     m_loadedFile = filename;
@@ -181,8 +218,7 @@ void LogViewMainWindow::LoadLog(
     FilesIndexer indexer(linePositionStorage, *m_linesStorage, lineSelector);
     indexer.AddFileIndexes(filename);
 
-    const LogLineHeaderParsingParams logLineHeaderParsingParams = LogLineHeaderParsingParams::FromJson(headerParsingConfigJson);
-    m_groupExtractor = std::make_unique<EventGroupExtractor>(logLineHeaderParsingParams);
+    m_groupExtractor = std::make_unique<EventGroupExtractor>(m_logLineHeaderParsingParams);
 
     m_eventLevels = FindEvents(lineSelector.EventPatterns, *m_linesStorage, *m_groupExtractor);
 
@@ -205,71 +241,121 @@ void LogViewMainWindow::LoadLogView()
     Invalidate();
 }
 
-void LogViewMainWindow::slot_EventSelectionChanged(const EventGraphicsItem* /*previous*/, const EventGraphicsItem* current)
+QList<QStringList> LoadLinesForEvent(const Event& event, const QString& filename, const IEventGroupExtractor* groupExtractor)
 {
-    gui_selectedEventView->clear();
+    QList<QStringList> result;
 
-    if (current->GetEvent().Type == EventType::Single)
+    if (event.Type == EventType::Single)
     {
-        QTreeWidgetItem* item = new QTreeWidgetItem(
-                                    QStringList()
-                                        << QString::number(current->GetEvent().StartLine.Position.NumberInFile)
-                                        << current->GetEvent().StartLine.Line);
-        item->setBackgroundColor(1, current->GetEvent().ViewColor.toQColor());
-        gui_selectedEventView->addTopLevelItem(item);
+        QStringList eventViewData;
+        eventViewData
+            << QString::number(event.StartLine.Position.NumberInFile)
+            << event.StartLine.Line
+            << event.ViewColor.toColorCode();
+
+        result.append(eventViewData);
     }
     else
     {
         {
-            QTreeWidgetItem* item = new QTreeWidgetItem(
-                                        QStringList()
-                                            << QString::number(current->GetEvent().StartLine.Position.NumberInFile)
-                                            << current->GetEvent().StartLine.Line);
-            item->setBackgroundColor(1, current->GetEvent().ViewColor.toQColor());
-            gui_selectedEventView->addTopLevelItem(item);
+            QStringList eventViewData;
+            eventViewData
+                << QString::number(event.StartLine.Position.NumberInFile)
+                << event.StartLine.Line
+                << event.ViewColor.toColorCode();
+            result.append(eventViewData);
         }
 
         QStringList lines = LoadFileBlockToStrings(
-                                m_loadedFile,
-                                current->GetEvent().StartLine.Position.Offset, current->GetEvent().EndLine.Position.Offset);
+                                filename,
+                                event.StartLine.Position.Offset, event.EndLine.Position.Offset);
 
         for (int i = 1; i < lines.size(); ++i)
         {
-            if (m_groupExtractor->GetGroupFromLine(lines[i]) != current->GetEvent().Group)
+            if (groupExtractor == nullptr ||
+                groupExtractor->GetGroupFromLine(lines[i]) != event.Group)
             {
                 continue;
             }
 
-            QTreeWidgetItem* item = new QTreeWidgetItem(
-                                        QStringList()
-                                            << QString::number(current->GetEvent().StartLine.Position.NumberInFile + i)
-                                            << lines[i]);
-            gui_selectedEventView->addTopLevelItem(item);
+            QStringList eventViewData;
+            eventViewData
+                << QString::number(event.StartLine.Position.NumberInFile + static_cast<unsigned int>(i))
+                << lines[i];
+            result.append(eventViewData);
         }
 
         {
-            QTreeWidgetItem* item = new QTreeWidgetItem(
-                                        QStringList()
-                                            << QString::number(current->GetEvent().EndLine.Position.NumberInFile)
-                                            << current->GetEvent().EndLine.Line);
-            item->setBackgroundColor(1, current->GetEvent().ViewColor.toQColor());
-            gui_selectedEventView->addTopLevelItem(item);
+            QStringList eventViewData;
+            eventViewData
+                << QString::number(event.EndLine.Position.NumberInFile)
+                << event.EndLine.Line
+                << event.ViewColor.toColorCode();
+            result.append(eventViewData);
         }
     }
+
+    return result;
 }
 
-QString LoadFileToQString(const QString& filename)
+class LogLineDataComparator
 {
-    QFile f(filename);
-    if (!f.open(QFile::ReadOnly | QFile::Text))
+public:
+    explicit LogLineDataComparator(LogLineHeaderParsingParams const& logLineHeaderParsingParams) :
+        m_sortingGroupName(logLineHeaderParsingParams.SortingGroup)
     {
-        return QString();
+        QString groupRegExp("");
+        m_lineParser.reset(new RegExpLogLineParser(logLineHeaderParsingParams.HeaderGroupRegExps, groupRegExp));
     }
 
-    QTextStream in(&f);
-    const QString data = in.readAll();
+    bool operator()(const QStringList &d1, const QStringList &d2) const
+    {
+        return GetSortingHeader(d1.at(1)) < GetSortingHeader(d2.at(1));
+    }
 
-    return data;
+private:
+    QString GetSortingHeader(const QString& line) const
+    {
+        const LogLineInfo lineInfo = m_lineParser->Parse(line);
+        return lineInfo.HeaderItems[m_sortingGroupName];
+    }
+
+private:
+    std::shared_ptr<ILogLineParser> m_lineParser;
+    QString const m_sortingGroupName;
+};
+
+void AppendEventLogLinesWithSorting(
+        const QList<QStringList>& currentEventLogLines,
+        QList<QStringList>& allEventsLogLines,
+        const LogLineDataComparator& logLineDataComparator)
+{
+    allEventsLogLines.append(currentEventLogLines);
+    std::sort(allEventsLogLines.begin(), allEventsLogLines.end(), logLineDataComparator);
+}
+
+void LogViewMainWindow::slot_EventSelectionChanged()
+{
+    gui_selectedEventView->clear();
+
+    QList<QStringList> eventsLogLines;
+    for (const auto& currentEventItem : gui_EventsViewScene->GetSelectedEventItems())
+    {
+        QList<QStringList> currentEventLogLines = LoadLinesForEvent(currentEventItem->GetEvent(), m_loadedFile, m_groupExtractor.get());
+        AppendEventLogLinesWithSorting(currentEventLogLines, eventsLogLines, LogLineDataComparator(m_logLineHeaderParsingParams));
+    }
+
+    for (const auto& logLines : eventsLogLines)
+    {
+        QTreeWidgetItem* item = new QTreeWidgetItem(QStringList() << logLines[0] << logLines[1]);
+
+        if (logLines.size() == 3)
+        {
+            item->setBackgroundColor(1, IMatchableEventPattern::Color::fromColorCode(logLines[2]).toQColor());
+        }
+
+        gui_selectedEventView->addTopLevelItem(item);
+    }
 }
 
 void LogViewMainWindow::slot_act_openFileTriggred()
@@ -281,10 +367,9 @@ void LogViewMainWindow::slot_act_openFileTriggred()
         return;
     }
 
-    const QString headerParsingConfigJson = LoadFileToQString(dialog.GetHeaderParsingConfig());
     const QString eventsParsingConfigJson = LoadFileToQString(dialog.GetEventPatternConfig());
 
-    LoadLog(dialog.GetOpenLogFileName(), headerParsingConfigJson, eventsParsingConfigJson);
+    LoadLog(dialog.GetOpenLogFileName(), eventsParsingConfigJson);
 }
 
 void LogViewMainWindow::Invalidate()
@@ -329,17 +414,20 @@ void LogViewMainWindow::CreateMenuBar()
 
     QMenu* fileMenu = new QMenu(tr("&File"));
     fileMenu->addAction(act_openFile);
-    fileMenu->addAction(act_copySelectedLinesToClipboard);
+
+    QMenu* editMenu = new QMenu(tr("&Edit"));
+    editMenu->addAction(act_copySelectedLinesToClipboard);
 
     gui_mainMenuBar->addMenu(fileMenu);
+    gui_mainMenuBar->addMenu(editMenu);
 
     setMenuBar(gui_mainMenuBar);
 }
 
 void LogViewMainWindow::CreateConnections()
 {
-    connect(gui_EventsViewScene, SIGNAL(EventSelectionChanged(const EventGraphicsItem*, const EventGraphicsItem*)),
-            this, SLOT(slot_EventSelectionChanged(const EventGraphicsItem*, const EventGraphicsItem*)),
+    connect(gui_EventsViewScene, SIGNAL(EventSelectionChanged()),
+            this, SLOT(slot_EventSelectionChanged()),
             Qt::QueuedConnection);
 
     connect(act_openFile, SIGNAL(triggered()),

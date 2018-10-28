@@ -1,5 +1,7 @@
 #include "EventsGraphicsScene.h"
 
+#include <QApplication>
+
 namespace ViewParams
 {
 
@@ -124,8 +126,7 @@ std::list<EventGraphicsItem*> GenerateEventViewItems(
 } // namespace
 
 EventsGraphicsScene::EventsGraphicsScene(QObject* parent) :
-    QGraphicsScene(parent),
-    m_selectedEventItem(nullptr)
+    QGraphicsScene(parent)
 {
 }
 
@@ -158,17 +159,30 @@ void EventsGraphicsScene::UpdateViewportParams(const std::size_t linesCount, con
                  (linesCount + 1) * (ViewParams::BaseEventHeight) + 2 * ViewParams::BaseVerticalSkip);
 }
 
+const QList<EventGraphicsItem*>&EventsGraphicsScene::GetSelectedEventItems() const
+{
+    return m_selectedEventItems;
+}
+
 void EventsGraphicsScene::OnEventSelection(EventGraphicsItem* eventGraphicsItem)
 {
-    EventGraphicsItem* prev = m_selectedEventItem;
-    m_selectedEventItem = eventGraphicsItem;
+    const bool isCtrlPressed = QApplication::keyboardModifiers().testFlag(Qt::ControlModifier);
 
-    if (prev != nullptr)
+    if (!isCtrlPressed)
     {
-        prev->Unselect();
+        for (auto& eventItem : m_selectedEventItems)
+        {
+            if (eventItem != nullptr)
+            {
+                eventItem->Unselect();
+            }
+        }
+
+        m_selectedEventItems.clear();
     }
 
-    m_selectedEventItem->Select();
+    m_selectedEventItems.push_back(eventGraphicsItem);
+    eventGraphicsItem->Select();
 
-    emit EventSelectionChanged(prev, m_selectedEventItem);
+    emit EventSelectionChanged();
 }

@@ -25,20 +25,17 @@ public:
     explicit LogViewMainWindow(QWidget *parent = nullptr);
     ~LogViewMainWindow() override;
 
-    void LoadLog(const QString& filename, const QString& headerParsingConfigJson, const QString& eventsParsingConfigJson);
+    void LoadLog(const QString& filename, const QString& eventsParsingConfigJson);
     void LoadLogView();
 
 signals:
 
 protected slots:
-    void slot_EventSelectionChanged(const EventGraphicsItem* previous, const EventGraphicsItem* current);
-
+    void slot_EventSelectionChanged();
     void slot_act_openFileTriggred();
-
-    void resizeEvent(QResizeEvent* event);
-
     void slot_act_copySelectedLinesToClipboard_Triggred();
 
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
     void CreateActions();
@@ -66,6 +63,8 @@ private:
     QString m_loadedFile;
 
     std::unique_ptr<IEventGroupExtractor> m_groupExtractor;
+
+    LogLineHeaderParsingParams m_logLineHeaderParsingParams;
 };
 
 #endif // LOGVIEWMAINWINDOW_H

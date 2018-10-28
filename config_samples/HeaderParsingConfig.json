@@ -1,5 +1,6 @@
 {
 	"GroupNameForGrouping" : "ThreadId",
+	"SortingGroup" : "DateTime",
 	"HeaderGroupRegExps" :
 	[
 		{

@@ -13,7 +13,6 @@ public:
     int exec() override;
 
     QString GetOpenLogFileName();
-    QString GetHeaderParsingConfig();
     QString GetEventPatternConfig();
 
 private:
@@ -21,7 +20,6 @@ private:
     QString m_HeaderParsingConfig;
     QString m_EventPatternConfig;
 
-    RecentFilesWidget* gui_RecentHeaderParsingConfigWidget;
     RecentFilesWidget* gui_RecentEventPatternConfigWidget;
 };
 

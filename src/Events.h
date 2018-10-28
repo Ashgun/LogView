@@ -163,6 +163,7 @@ struct LogLineHeaderParsingParams
 
     QVector<QPair<GroupNameType, GroupRegExpString>> HeaderGroupRegExps;
     QString GroupNameForGrouping;
+    QString SortingGroup;
 
     static LogLineHeaderParsingParams FromJson(const QString& jsonData);
     static QString ToJson(const LogLineHeaderParsingParams& params);

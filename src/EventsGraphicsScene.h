@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QGraphicsScene>
+#include <QList>
 
 #include "EventGraphicsItem.h"
 
@@ -15,14 +16,16 @@ public:
     void DrawEventItems(const std::vector<std::vector<Event>>& eventLevels);
     void UpdateViewportParams(const std::size_t linesCount, const int baseViewPortWidth);
 
+    const QList<EventGraphicsItem*>& GetSelectedEventItems() const;
+
 signals:
-    void EventSelectionChanged(const EventGraphicsItem* previous, const EventGraphicsItem* current);
+    void EventSelectionChanged();
 
 private:
     void OnEventSelection(EventGraphicsItem* eventGraphicsItem) override;
 
 private:
-    EventGraphicsItem* m_selectedEventItem;
+    QList<EventGraphicsItem*> m_selectedEventItems;
 
     std::list<EventGraphicsItem*> m_eventsToView;
     qreal m_previosGraphicsSceneWidth = 1.0;

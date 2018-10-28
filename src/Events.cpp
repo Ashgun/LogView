@@ -795,7 +795,13 @@ LogLineHeaderParsingParams LogLineHeaderParsingParams::FromJson(const QString& j
         throw std::invalid_argument("Invalid JSON data in LogLineHeaderParsingParams: GroupNameForGrouping");
     }
 
+    if (root["SortingGroup"].isNull() || root["SortingGroup"].empty())
+    {
+        throw std::invalid_argument("Invalid JSON data in LogLineHeaderParsingParams: SortingGroup");
+    }
+
     params.GroupNameForGrouping = QString::fromStdString(root["GroupNameForGrouping"].asString());
+    params.SortingGroup = QString::fromStdString(root["SortingGroup"].asString());
 
     params.HeaderGroupRegExps.reserve(static_cast<int>(root["HeaderGroupRegExps"].size()));
     for (Json::ArrayIndex i = 0; i < root["HeaderGroupRegExps"].size(); ++i)
@@ -826,6 +832,7 @@ QString LogLineHeaderParsingParams::ToJson(const LogLineHeaderParsingParams& par
     Json::Value root;
 
     root["GroupNameForGrouping"] = params.GroupNameForGrouping.toStdString();
+    root["SortingGroup"] = params.SortingGroup.toStdString();
 
     Json::Value groupInfoArray(Json::ValueType::arrayValue);
     for (const auto& groupInfo : params.HeaderGroupRegExps)

@@ -24,6 +24,7 @@ public slots:
 private:
     QTableWidget* gui_paramsTable;
     QComboBox* gui_groupingHeaderCombo;
+    QComboBox* gui_sortingHeaderCombo;
 };
 
 #endif // LOGLINEHEADERPARSINGPARAMSEDITWIDGET_H
