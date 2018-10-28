@@ -19,6 +19,7 @@
 #include "RegExpLogLineParser.h"
 
 #include "EventPatternsEditDialog.h"
+#include "LogFileWithConfigsOpenDialog.h"
 
 namespace
 {
@@ -148,7 +149,7 @@ LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
 }
 
 LogViewMainWindow::~LogViewMainWindow() = default;
-#include <iostream>
+
 void LogViewMainWindow::LoadLog(
         const QString& filename, const QString& headerParsingConfigJson,
         const QString& eventsParsingConfigJson)
@@ -273,10 +274,17 @@ QString LoadFileToQString(const QString& filename)
 
 void LogViewMainWindow::slot_act_openFileTriggred()
 {
-    const QString headerParsingConfigJson = LoadFileToQString("HeaderParsingConfig.json");
-    const QString eventsParsingConfigJson = LoadFileToQString("BackupServiceParseConfig.json");
+    LogFileWithConfigsOpenDialog dialog;
 
-    LoadLog("log1.log", headerParsingConfigJson, eventsParsingConfigJson);
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    const QString headerParsingConfigJson = LoadFileToQString(dialog.GetHeaderParsingConfig());
+    const QString eventsParsingConfigJson = LoadFileToQString(dialog.GetEventPatternConfig());
+
+    LoadLog(dialog.GetOpenLogFileName(), headerParsingConfigJson, eventsParsingConfigJson);
 }
 
 void LogViewMainWindow::Invalidate()
