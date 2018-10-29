@@ -145,7 +145,19 @@ void RecentFilesWidget::FillFromConfig()
     }
 
     QStringList recentFiles = settings.value(m_filesGroupInConfig).toStringList();
+
+    // Remove not available files
+    for (auto& recentFileName : recentFiles)
+    {
+        QFile file(recentFileName);
+        if (!file.exists())
+        {
+            recentFileName.clear();
+        }
+    }
+
     recentFiles.removeAll(QString(""));
+    recentFiles.removeDuplicates();
 
     gui_selectedFileEdit->clear();
     if (!recentFiles.isEmpty())
