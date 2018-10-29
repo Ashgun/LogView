@@ -2,7 +2,6 @@
 
 #include <QApplication>
 #include <QClipboard>
-#include <QFile>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QScrollBar>
@@ -23,6 +22,7 @@
 #include "LogFileWithConfigsOpenDialog.h"
 
 #include "Common.h"
+#include "Utils.h"
 
 #include <stdexcept>
 
@@ -93,20 +93,6 @@ QStringList LoadFileBlockToStrings(const QString& filename, const quint64 from, 
     }
 
     return resultList;
-}
-
-QString LoadFileToQString(const QString& filename)
-{
-    QFile f(filename);
-    if (!f.open(QFile::ReadOnly | QFile::Text))
-    {
-        return QString();
-    }
-
-    QTextStream in(&f);
-    const QString data = in.readAll();
-
-    return data;
 }
 
 LogLineHeaderParsingParams LoadLogLineHeaderParsingParams()
@@ -398,6 +384,12 @@ void LogViewMainWindow::slot_act_copySelectedLinesToClipboard_Triggred()
     clipboard->setText(text);
 }
 
+void LogViewMainWindow::slot_act_editEventPatternsConfig_Triggred()
+{
+    EventPatternsEditDialog window;
+    /*int code = */window.exec();
+}
+
 void LogViewMainWindow::CreateActions()
 {
     act_openFile = new QAction(tr("&Open log file"));
@@ -406,6 +398,8 @@ void LogViewMainWindow::CreateActions()
     // Disabled because of conflicting with shortcut
 //    act_copySelectedLinesToClipboard->setShortcut(QKeySequence("Ctrl+C"));
     shortcut_copySelectedLinesToClipboard = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_C), this);
+
+    act_editEventPatternsConfig = new QAction(tr("Edit event patterns config"));
 }
 
 void LogViewMainWindow::CreateMenuBar()
@@ -418,8 +412,12 @@ void LogViewMainWindow::CreateMenuBar()
     QMenu* editMenu = new QMenu(tr("&Edit"));
     editMenu->addAction(act_copySelectedLinesToClipboard);
 
+    QMenu* toolsMenu = new QMenu(tr("&Tools"));
+    toolsMenu->addAction(act_editEventPatternsConfig);
+
     gui_mainMenuBar->addMenu(fileMenu);
     gui_mainMenuBar->addMenu(editMenu);
+    gui_mainMenuBar->addMenu(toolsMenu);
 
     setMenuBar(gui_mainMenuBar);
 }
@@ -437,6 +435,9 @@ void LogViewMainWindow::CreateConnections()
             this, SLOT(slot_act_copySelectedLinesToClipboard_Triggred()), Qt::DirectConnection);
     connect(shortcut_copySelectedLinesToClipboard, SIGNAL(activated()),
             this, SLOT(slot_act_copySelectedLinesToClipboard_Triggred()), Qt::DirectConnection);
+
+    connect(act_editEventPatternsConfig, SIGNAL(triggered()),
+            this, SLOT(slot_act_editEventPatternsConfig_Triggred()), Qt::DirectConnection);
 }
 
 void LogViewMainWindow::Redraw()

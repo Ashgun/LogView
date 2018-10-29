@@ -34,6 +34,7 @@ protected slots:
     void slot_EventSelectionChanged();
     void slot_act_openFileTriggred();
     void slot_act_copySelectedLinesToClipboard_Triggred();
+    void slot_act_editEventPatternsConfig_Triggred();
 
     void resizeEvent(QResizeEvent* event) override;
 
@@ -56,6 +57,7 @@ private:
     QAction* act_openFile;
     QAction* act_copySelectedLinesToClipboard;
     QShortcut* shortcut_copySelectedLinesToClipboard;
+    QAction* act_editEventPatternsConfig;
 
     std::unique_ptr<IPositionedLinesStorage> m_linesStorage;
     std::vector<std::vector<Event>> m_eventLevels;

@@ -99,7 +99,7 @@ void RecentFilesWidget::slot_openFileButton_clicked(bool)
     const QString caption(tr("Open %1 file").arg(m_configData));
 
     const QString selectedFilename = QFileDialog::getOpenFileName(
-                                 this, caption, QString(), tr("JSON files (*.json)"));
+                                 this, caption, QString(), Constants::ConfigFilesFilter);
 
     if (selectedFilename.isEmpty())
     {

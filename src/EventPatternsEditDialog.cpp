@@ -1,10 +1,15 @@
 #include "EventPatternsEditDialog.h"
 
+#include "Common.h"
+#include "Events.h"
+#include "Utils.h"
+
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QDialogButtonBox>
+#include <QFileDialog>
 
 #include <QDebug>
 
@@ -66,8 +71,11 @@ EventPatternsEditDialog::EventPatternsEditDialog(QWidget *parent) :
 
     gui_eventsEdit = new EventPatternEditWidget();
 
-    QDialogButtonBox* buttons = new QDialogButtonBox(
-                                    QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Orientation::Horizontal);
+    QDialogButtonBox* buttons = new QDialogButtonBox(Qt::Orientation::Horizontal);
+    buttons->addButton(QDialogButtonBox::Open);
+    buttons->addButton(QDialogButtonBox::Save);
+//    buttons->addButton(QDialogButtonBox::Ok);
+    buttons->addButton(QDialogButtonBox::Cancel);
 
     QVBoxLayout* topLevelBox = new QVBoxLayout;
 
@@ -101,8 +109,10 @@ EventPatternsEditDialog::EventPatternsEditDialog(QWidget *parent) :
             this, SLOT(slot_eventsTree_currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
             Qt::DirectConnection);
 
-    connect(buttons, SIGNAL(accepted()), this, SLOT(slot_accepted()), Qt::DirectConnection);
-    connect(buttons, SIGNAL(rejected()), this, SLOT(slot_rejected()), Qt::DirectConnection);
+//    connect(buttons->button(QDialogButtonBox::Ok), SIGNAL(clicked()), SLOT(slot_accepted()), Qt::DirectConnection);
+    connect(buttons->button(QDialogButtonBox::Cancel), SIGNAL(clicked()), SLOT(slot_rejected()), Qt::DirectConnection);
+    connect(buttons->button(QDialogButtonBox::Open), SIGNAL(clicked()), SLOT(slot_open()), Qt::DirectConnection);
+    connect(buttons->button(QDialogButtonBox::Save), SIGNAL(clicked()), SLOT(slot_save()), Qt::DirectConnection);
 
     connect(gui_addEventPatternButton, SIGNAL(clicked(bool)),
             this, SLOT(slot_addEventPatternButton_clicked(bool)), Qt::DirectConnection);
@@ -149,13 +159,18 @@ void EventPatternsEditDialog::UpdateItemByEventPatternEdit(QTreeWidgetItem* item
     item->setText(0, m_mapTreeItemsToEventPatterns[item]->Name);
 }
 
-void EventPatternsEditDialog::slot_accepted()
+void EventPatternsEditDialog::AcceptState()
 {
     QTreeWidgetItem* currentItem = gui_eventsTree->currentItem();
     if (currentItem != nullptr)
     {
         UpdateItemByEventPatternEdit(currentItem);
     }
+}
+
+void EventPatternsEditDialog::slot_accepted()
+{
+    AcceptState();
 
 //    qDebug() << "EventPatternsEditDialog::slot_accepted()";
     accept();
@@ -165,6 +180,38 @@ void EventPatternsEditDialog::slot_rejected()
 {
 //    qDebug() << "EventPatternsEditDialog::slot_rejected()";
     reject();
+}
+
+void EventPatternsEditDialog::slot_open()
+{
+    const QString caption(tr("Open event pattern configuration file"));
+    m_openedFileName = QFileDialog::getOpenFileName(
+                                 this, caption, QString(), Constants::ConfigFilesFilter);
+
+    const QString eventsParsingConfigJson = LoadFileToQString(m_openedFileName);
+
+    EventPatternsHierarchy patterns;
+    EventPatternsHierarchy::fromJson(eventsParsingConfigJson, patterns);
+
+    SetEventPatternsHierarchy(patterns);
+}
+
+void EventPatternsEditDialog::slot_save()
+{
+    AcceptState();
+
+    if (m_openedFileName.isEmpty())
+    {
+        const QString caption(tr("Save event pattern configuration file"));
+        m_openedFileName = QFileDialog::getSaveFileName(
+                                     this, caption, QString(), Constants::ConfigFilesFilter);
+    }
+
+    EventPatternsHierarchy patterns = GetEventPatternsHierarchy();
+
+   const QString eventsParsingConfigJson = EventPatternsHierarchy::toJson(patterns);
+
+   SaveQStringToFile(eventsParsingConfigJson, m_openedFileName);
 }
 
 void EventPatternsEditDialog::slot_eventsTree_currentItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* previous)

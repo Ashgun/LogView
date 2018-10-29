@@ -45,7 +45,8 @@ SOURCES += src/main.cpp \
     src/EventPatternsEditDialog.cpp \
     src/EventsTreeWidget.cpp \
     src/RecentFilesWidget.cpp \
-    src/LogFileWithConfigsOpenDialog.cpp
+    src/LogFileWithConfigsOpenDialog.cpp \
+    src/Utils.cpp
 
 HEADERS += \
     src/ILogLineParser.h \
@@ -79,4 +80,5 @@ HEADERS += \
     src/EventsTreeWidget.h \
     src/RecentFilesWidget.h \
     src/Common.h \
-    src/LogFileWithConfigsOpenDialog.h
+    src/LogFileWithConfigsOpenDialog.h \
+    src/Utils.h

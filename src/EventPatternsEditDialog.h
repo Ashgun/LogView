@@ -25,12 +25,15 @@ public:
 
 private:
     void UpdateItemByEventPatternEdit(QTreeWidgetItem *item);
+    void AcceptState();
 
 signals:
 
 protected slots:
     void slot_accepted();
     void slot_rejected();
+    void slot_open();
+    void slot_save();
     void slot_eventsTree_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
     void slot_addEventPatternButton_clicked(bool);
     void slot_deleteEventPatternButton_clicked(bool);
@@ -43,6 +46,8 @@ private:
     QPushButton* gui_deleteEventPatternButton;
 
     std::map<QTreeWidgetItem*, IMatchableEventPatternPtr> m_mapTreeItemsToEventPatterns;
+
+    QString m_openedFileName;
 };
 
 #endif // EVENTPATTERNSEDITDIALOG_H
