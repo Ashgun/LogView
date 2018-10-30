@@ -516,8 +516,8 @@ void FindExtendedEventInRange(ExtendedEventPattern const& pattern, IPositionedLi
             LocatedEvent event;
             event.FoundEvent = CreateEventFromPattern(pattern);
             event.FoundEvent.Level = level;
-            event.FoundEvent.StartLine = positionedLineToProc;
-            event.FoundEvent.StartLine.Position.NumberInMatchedLines = i;
+            event.FoundEvent.StartLine = event.FoundEvent.EndLine = positionedLineToProc;
+            event.FoundEvent.StartLine.Position.NumberInMatchedLines = event.FoundEvent.EndLine.Position.NumberInMatchedLines = i;
             event.FoundEvent.Group = eventGroupExtractor.GetGroupFromLine(event.FoundEvent.StartLine);
             event.FoundEventStartLocation = i;
 

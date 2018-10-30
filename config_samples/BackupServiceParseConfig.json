@@ -37,8 +37,8 @@
 					"AltColor" : "800000",
 					"AltEnd" : 
 					{
-						"Data" : "[TenantBackupProcessor] Session completed with errors",
-						"Type" : "String"
+						"Data" : "(\\[TenantBackupProcessor\\] Session completed with errors)|(\\[TenantBackupProcessor\\] Session failed)",
+						"Type" : "RegExp"
 					},
 					"EndPattern" : 
 					{
