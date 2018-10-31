@@ -291,10 +291,10 @@ private:
     SplittedIndexes const& m_indexes;
 };
 
-class EventGroupExtractor : public IEventGroupExtractor
+class EventInfoExtractor : public IEventInfoExtractor
 {
 public:
-    explicit EventGroupExtractor(QVector<QPair<QString, QString>> const& headerRegExps, QString const& groupName) :
+    explicit EventInfoExtractor(QVector<QPair<QString, QString>> const& headerRegExps, QString const& groupName) :
         m_groupName(groupName)
     {
         QString groupRegExp("");

@@ -15,7 +15,7 @@
 
 class EventGraphicsItem;
 
-class IEventGroupExtractor;
+class IEventInfoExtractor;
 class IPositionedLinesStorage;
 
 class LogViewMainWindow : public QMainWindow
@@ -64,7 +64,7 @@ private:
 
     QString m_loadedFile;
 
-    std::unique_ptr<IEventGroupExtractor> m_groupExtractor;
+    std::unique_ptr<IEventInfoExtractor> m_infoExtractor;
 
     LogLineHeaderParsingParams m_logLineHeaderParsingParams;
 };

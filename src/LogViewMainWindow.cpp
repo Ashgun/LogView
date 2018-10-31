@@ -29,10 +29,10 @@
 namespace
 {
 
-class EventGroupExtractor : public IEventGroupExtractor
+class EventInfoExtractor : public IEventInfoExtractor
 {
 public:
-    explicit EventGroupExtractor(LogLineHeaderParsingParams const& logLineHeaderParsingParams) :
+    explicit EventInfoExtractor(LogLineHeaderParsingParams const& logLineHeaderParsingParams) :
         m_groupName(logLineHeaderParsingParams.GroupNameForGrouping)
     {
         QString groupRegExp("");
@@ -43,6 +43,12 @@ public:
     {
         LogLineInfo info = m_lineParser->Parse(line);
         return info.HeaderItems[m_groupName];
+    }
+
+    QString GetMessageFromLine(const EventPattern::PatternString& line) const override
+    {
+        LogLineInfo info = m_lineParser->Parse(line);
+        return info.Message;
     }
 
 private:
@@ -204,9 +210,9 @@ void LogViewMainWindow::LoadLog(
     FilesIndexer indexer(linePositionStorage, *m_linesStorage, lineSelector);
     indexer.AddFileIndexes(filename);
 
-    m_groupExtractor = std::make_unique<EventGroupExtractor>(m_logLineHeaderParsingParams);
+    m_infoExtractor = std::make_unique<EventInfoExtractor>(m_logLineHeaderParsingParams);
 
-    m_eventLevels = FindEvents(lineSelector.EventPatterns, *m_linesStorage, *m_groupExtractor);
+    m_eventLevels = FindEvents(lineSelector.EventPatterns, *m_linesStorage, *m_infoExtractor);
 
     Invalidate();
 }
@@ -227,7 +233,7 @@ void LogViewMainWindow::LoadLogView()
     Invalidate();
 }
 
-QList<QStringList> LoadLinesForEvent(const Event& event, const QString& filename, const IEventGroupExtractor* groupExtractor)
+QList<QStringList> LoadLinesForEvent(const Event& event, const QString& filename, const IEventInfoExtractor* groupExtractor)
 {
     QList<QStringList> result;
 
@@ -327,7 +333,7 @@ void LogViewMainWindow::slot_EventSelectionChanged()
     QList<QStringList> eventsLogLines;
     for (const auto& currentEventItem : gui_EventsViewScene->GetSelectedEventItems())
     {
-        QList<QStringList> currentEventLogLines = LoadLinesForEvent(currentEventItem->GetEvent(), m_loadedFile, m_groupExtractor.get());
+        QList<QStringList> currentEventLogLines = LoadLinesForEvent(currentEventItem->GetEvent(), m_loadedFile, m_infoExtractor.get());
         AppendEventLogLinesWithSorting(currentEventLogLines, eventsLogLines, LogLineDataComparator(m_logLineHeaderParsingParams));
     }
 

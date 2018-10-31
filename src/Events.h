@@ -25,9 +25,9 @@ class IMatchableEventPattern
 public:
     struct Color
     {
-        quint8 R;
-        quint8 G;
-        quint8 B;
+        quint8 R = 255;
+        quint8 G = 255;
+        quint8 B = 255;
 
         QColor toQColor() const;
         QString toColorCode() const;
@@ -169,18 +169,22 @@ struct LogLineHeaderParsingParams
     static QString ToJson(const LogLineHeaderParsingParams& params);
 };
 
-class IEventGroupExtractor
+class IEventInfoExtractor
 {
 public:
     virtual QString GetGroupFromLine(PositionedLine const& line) const;
     virtual QString GetGroupFromLine(EventPattern::PatternString const& line) const = 0;
-    virtual ~IEventGroupExtractor() = default;
+
+    virtual QString GetMessageFromLine(PositionedLine const& line) const;
+    virtual QString GetMessageFromLine(EventPattern::PatternString const& line) const = 0;
+
+    virtual ~IEventInfoExtractor() = default;
 };
 
 class IPositionedLinesStorage;
 
 std::vector<std::vector<Event>> FindEvents(EventPatternsHierarchy const& patterns, IPositionedLinesStorage const& lines,
-                                           IEventGroupExtractor const& eventGroupExtractor);
+                                           IEventInfoExtractor const& eventInfoExtractor);
 
 
 bool IsEventsOverlapped(Event const& l, Event const& r);

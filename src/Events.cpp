@@ -483,7 +483,7 @@ struct LocatedEvent
 
 void FindSingleEventInRange(SingleEventPattern const& pattern, IPositionedLinesStorage const& lines,
     const int level, std::size_t const firstInd, std::size_t const lastInd, std::vector<LocatedEvent>& events,
-                            IEventGroupExtractor const& eventGroupExtractor)
+                            IEventInfoExtractor const& eventInfoExtractor)
 {
     for (std::size_t i = firstInd; i < lastInd; ++i)
     {
@@ -494,7 +494,7 @@ void FindSingleEventInRange(SingleEventPattern const& pattern, IPositionedLinesS
             event.FoundEvent.Level = level;
             event.FoundEvent.StartLine = event.FoundEvent.EndLine = lines[i];
             event.FoundEvent.StartLine.Position.NumberInMatchedLines = event.FoundEvent.EndLine.Position.NumberInMatchedLines = i;
-            event.FoundEvent.Group = eventGroupExtractor.GetGroupFromLine(event.FoundEvent.StartLine);
+            event.FoundEvent.Group = eventInfoExtractor.GetGroupFromLine(event.FoundEvent.StartLine);
             event.FoundEvent.ViewColor = pattern.ViewColor;
             event.FoundEventStartLocation = event.FoundEventEndLocation = i;
 
@@ -505,20 +505,45 @@ void FindSingleEventInRange(SingleEventPattern const& pattern, IPositionedLinesS
 
 void FindExtendedEventInRange(ExtendedEventPattern const& pattern, IPositionedLinesStorage const& lines,
     const int level, std::size_t const firstInd, std::size_t const lastInd, std::vector<LocatedEvent>& events,
-                              IEventGroupExtractor const& eventGroupExtractor)
+    IEventInfoExtractor const& eventInfoExtractor)
 {
+    const auto UpdateIncorrectEventIfRequired =
+            [&events, level, &lines, &eventInfoExtractor](const std::size_t index)
+    {
+        if (!events.empty())
+        {
+            LocatedEvent& event = events.back();
+
+            if (event.FoundEvent.EndLine.LevelInHierarchy == -1 &&
+                event.FoundEvent.Level == level)
+            {
+                event.FoundEvent.EndLine = lines[index - 1];
+                event.FoundEvent.EndLine.Position.NumberInMatchedLines = index - 1;
+
+                const QString messageToChange = eventInfoExtractor.GetMessageFromLine(event.FoundEvent.EndLine.Line);
+                const int messagePos = event.FoundEvent.EndLine.Line.indexOf(messageToChange);
+                event.FoundEvent.EndLine.Line = event.FoundEvent.EndLine.Line.mid(0, messagePos) +
+                                                "<<< Event end and alternative end were not found >>>";
+            }
+        }
+    };
+
     for (std::size_t i = firstInd; i < lastInd; ++i)
     {
         const auto& positionedLineToProc = lines[i];
 
         if (pattern.IsStartPatternMatched(positionedLineToProc.Line))
         {
+            UpdateIncorrectEventIfRequired(i);
+
             LocatedEvent event;
             event.FoundEvent = CreateEventFromPattern(pattern);
             event.FoundEvent.Level = level;
-            event.FoundEvent.StartLine = event.FoundEvent.EndLine = positionedLineToProc;
-            event.FoundEvent.StartLine.Position.NumberInMatchedLines = event.FoundEvent.EndLine.Position.NumberInMatchedLines = i;
-            event.FoundEvent.Group = eventGroupExtractor.GetGroupFromLine(event.FoundEvent.StartLine);
+            event.FoundEvent.StartLine = positionedLineToProc;
+            event.FoundEvent.StartLine.Position.NumberInMatchedLines = i;
+//            event.FoundEvent.StartLine = event.FoundEvent.EndLine = positionedLineToProc;
+//            event.FoundEvent.StartLine.Position.NumberInMatchedLines = event.FoundEvent.EndLine.Position.NumberInMatchedLines = i;
+            event.FoundEvent.Group = eventInfoExtractor.GetGroupFromLine(event.FoundEvent.StartLine);
             event.FoundEventStartLocation = i;
 
             events.push_back(event);
@@ -528,7 +553,7 @@ void FindExtendedEventInRange(ExtendedEventPattern const& pattern, IPositionedLi
 
         if (pattern.IsEndOrAltPatternMatched(positionedLineToProc.Line))
         {
-            const auto group = eventGroupExtractor.GetGroupFromLine(positionedLineToProc);
+            const auto group = eventInfoExtractor.GetGroupFromLine(positionedLineToProc);
             for (std::vector<LocatedEvent>::reverse_iterator iter = events.rbegin(); iter != events.rend(); ++iter)
             {
                 if (iter->FoundEvent.Group == group && iter->FoundEvent.Type == EventType::Extended)
@@ -551,6 +576,8 @@ void FindExtendedEventInRange(ExtendedEventPattern const& pattern, IPositionedLi
             }
         }
     }
+
+    UpdateIncorrectEventIfRequired(lastInd);
 }
 
 std::vector<Event> LocatedEventsToEvents(std::vector<LocatedEvent> const& locatedEvents)
@@ -568,23 +595,23 @@ std::vector<Event> LocatedEventsToEvents(std::vector<LocatedEvent> const& locate
 
 void FindEventsInRange(IMatchableEventPattern const& pattern, IPositionedLinesStorage const& lines,
     const int level, std::size_t const firstInd, std::size_t const lastInd, std::vector<LocatedEvent>& events,
-                       IEventGroupExtractor const& eventGroupExtractor)
+                       IEventInfoExtractor const& eventInfoExtractor)
 {
     if (pattern.GetType() == EventType::Single)
     {
         SingleEventPattern const& singleEventPattern = dynamic_cast<SingleEventPattern const&>(pattern);
-        FindSingleEventInRange(singleEventPattern, lines, level, firstInd, lastInd, events, eventGroupExtractor);
+        FindSingleEventInRange(singleEventPattern, lines, level, firstInd, lastInd, events, eventInfoExtractor);
     }
     else
     {
         ExtendedEventPattern const& extendedEventPattern = dynamic_cast<ExtendedEventPattern const&>(pattern);
-        FindExtendedEventInRange(extendedEventPattern, lines, level, firstInd, lastInd, events, eventGroupExtractor);
+        FindExtendedEventInRange(extendedEventPattern, lines, level, firstInd, lastInd, events, eventInfoExtractor);
     }
 }
 
 void GetPattertsOfSelectedLevel(
     std::vector<EventPatternsHierarchyNode> const& patterns, int const requiredLevel, int const currentLevel,
-    std::vector<EventPatternsHierarchyNode>& result, IEventGroupExtractor const& eventGroupExtractor)
+    std::vector<EventPatternsHierarchyNode>& result, IEventInfoExtractor const& eventInfoExtractor)
 {
     if (requiredLevel == currentLevel)
     {
@@ -598,7 +625,7 @@ void GetPattertsOfSelectedLevel(
     {
         for (std::size_t i = 0; i < patterns.size(); ++i)
         {
-            GetPattertsOfSelectedLevel(patterns[i].SubEvents, requiredLevel, currentLevel + 1, result, eventGroupExtractor);
+            GetPattertsOfSelectedLevel(patterns[i].SubEvents, requiredLevel, currentLevel + 1, result, eventInfoExtractor);
         }
     }
 }
@@ -606,7 +633,7 @@ void GetPattertsOfSelectedLevel(
 } // namespace
 
 std::vector<std::vector<Event>> FindEvents(const EventPatternsHierarchy& patterns, const IPositionedLinesStorage& lines,
-                                           IEventGroupExtractor const& eventGroupExtractor)
+                                           IEventInfoExtractor const& eventInfoExtractor)
 {
     if (lines.Size() == 0)
     {
@@ -617,12 +644,12 @@ std::vector<std::vector<Event>> FindEvents(const EventPatternsHierarchy& pattern
     for (int level = 0; level < 10; ++level)
     {
         std::vector<EventPatternsHierarchyNode> eventsOfSelectedLevel;
-        GetPattertsOfSelectedLevel(patterns.TopLevelNodes, level, 0, eventsOfSelectedLevel, eventGroupExtractor);
+        GetPattertsOfSelectedLevel(patterns.TopLevelNodes, level, 0, eventsOfSelectedLevel, eventInfoExtractor);
 
         std::vector<LocatedEvent> locatedEvents;
         for (std::size_t i = 0; i < eventsOfSelectedLevel.size(); ++i)
         {
-            FindEventsInRange(*eventsOfSelectedLevel[i].Event, lines, level, 0, lines.Size(), locatedEvents, eventGroupExtractor);
+            FindEventsInRange(*eventsOfSelectedLevel[i].Event, lines, level, 0, lines.Size(), locatedEvents, eventInfoExtractor);
         }
 
         if (level > 0 && locatedEvents.empty())
@@ -765,9 +792,14 @@ IMatchableEventPattern::Color IMatchableEventPattern::Color::fromQColor(const QC
     return result;
 }
 
-QString IEventGroupExtractor::GetGroupFromLine(const PositionedLine& line) const
+QString IEventInfoExtractor::GetGroupFromLine(const PositionedLine& line) const
 {
     return GetGroupFromLine(line.Line);
+}
+
+QString IEventInfoExtractor::GetMessageFromLine(const PositionedLine& line) const
+{
+    return GetMessageFromLine(line.Line);
 }
 
 LogLineHeaderParsingParams LogLineHeaderParsingParams::FromJson(const QString& jsonData)
