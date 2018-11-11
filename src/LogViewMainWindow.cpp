@@ -241,7 +241,7 @@ QList<QStringList> LoadLinesForEvent(const Event& event, const QString& filename
     {
         QStringList eventViewData;
         eventViewData
-            << QString::number(event.StartLine.Position.NumberInFile)
+            << QString::number(event.StartLine.Position.NumberInFile + 1)
             << event.StartLine.Line
             << event.ViewColor.toColorCode();
 
@@ -252,7 +252,7 @@ QList<QStringList> LoadLinesForEvent(const Event& event, const QString& filename
         {
             QStringList eventViewData;
             eventViewData
-                << QString::number(event.StartLine.Position.NumberInFile)
+                << QString::number(event.StartLine.Position.NumberInFile + 1)
                 << event.StartLine.Line
                 << event.ViewColor.toColorCode();
             result.append(eventViewData);
@@ -272,7 +272,7 @@ QList<QStringList> LoadLinesForEvent(const Event& event, const QString& filename
 
             QStringList eventViewData;
             eventViewData
-                << QString::number(event.StartLine.Position.NumberInFile + static_cast<unsigned int>(i))
+                << QString::number(event.StartLine.Position.NumberInFile + static_cast<unsigned int>(i) + 1)
                 << lines[i];
             result.append(eventViewData);
         }
@@ -280,7 +280,7 @@ QList<QStringList> LoadLinesForEvent(const Event& event, const QString& filename
         {
             QStringList eventViewData;
             eventViewData
-                << QString::number(event.EndLine.Position.NumberInFile)
+                << QString::number(event.EndLine.Position.NumberInFile + 1)
                 << event.EndLine.Line
                 << event.ViewColor.toColorCode();
             result.append(eventViewData);
