@@ -15,10 +15,11 @@ public:
     FileIndex Index;
     LineNumber NumberInFile;
     LineNumber NumberInMatchedLines;
+    bool Matched;
 
 public:
     LinePosition();
-    LinePosition(FileOffset fileOffset, FileIndex fileId, LineNumber numberInMatchedLines, LineNumber numberInFile);
+    LinePosition(FileOffset fileOffset, FileIndex fileId, LineNumber numberInMatchedLines, LineNumber numberInFile, const bool matched = false);
     bool operator==(LinePosition const& other) const;
 };
 

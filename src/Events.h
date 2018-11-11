@@ -183,7 +183,7 @@ public:
 
 class IPositionedLinesStorage;
 
-std::vector<std::vector<Event>> FindEvents(EventPatternsHierarchy const& patterns, IPositionedLinesStorage const& lines,
+std::vector<std::vector<Event>> FindEvents(EventPatternsHierarchy const& patterns, IPositionedLinesStorage& lines,
                                            IEventInfoExtractor const& eventInfoExtractor);
 
 

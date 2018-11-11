@@ -481,13 +481,13 @@ struct LocatedEvent
     LocatedEvent() = default;
 };
 
-void FindSingleEventInRange(SingleEventPattern const& pattern, IPositionedLinesStorage const& lines,
+void FindSingleEventInRange(SingleEventPattern const& pattern, IPositionedLinesStorage& lines,
     const int level, std::size_t const firstInd, std::size_t const lastInd, std::vector<LocatedEvent>& events,
                             IEventInfoExtractor const& eventInfoExtractor)
 {
     for (std::size_t i = firstInd; i < lastInd; ++i)
     {
-        if (pattern.IsPatternMatched(lines[i].Line))
+        if (pattern.IsPatternMatched(lines[i].Line) && !lines[i].Position.Matched)
         {
             LocatedEvent event;
             event.FoundEvent = CreateEventFromPattern(pattern);
@@ -498,12 +498,14 @@ void FindSingleEventInRange(SingleEventPattern const& pattern, IPositionedLinesS
             event.FoundEvent.ViewColor = pattern.ViewColor;
             event.FoundEventStartLocation = event.FoundEventEndLocation = i;
 
+            lines[i].Position.Matched = true;
+
             events.push_back(event);
         }
     }
 }
 
-void FindExtendedEventInRange(ExtendedEventPattern const& pattern, IPositionedLinesStorage const& lines,
+void FindExtendedEventInRange(ExtendedEventPattern const& pattern, IPositionedLinesStorage& lines,
     const int level, std::size_t const firstInd, std::size_t const lastInd, std::vector<LocatedEvent>& events,
     IEventInfoExtractor const& eventInfoExtractor)
 {
@@ -532,7 +534,7 @@ void FindExtendedEventInRange(ExtendedEventPattern const& pattern, IPositionedLi
     {
         const auto& positionedLineToProc = lines[i];
 
-        if (pattern.IsStartPatternMatched(positionedLineToProc.Line))
+        if (pattern.IsStartPatternMatched(positionedLineToProc.Line) && !positionedLineToProc.Position.Matched)
         {
             UpdateIncorrectEventIfRequired(i);
 
@@ -548,10 +550,12 @@ void FindExtendedEventInRange(ExtendedEventPattern const& pattern, IPositionedLi
 
             events.push_back(event);
 
+            lines[i].Position.Matched = true;
+
             continue;
         }
 
-        if (pattern.IsEndOrAltPatternMatched(positionedLineToProc.Line))
+        if (pattern.IsEndOrAltPatternMatched(positionedLineToProc.Line) && !positionedLineToProc.Position.Matched)
         {
             const auto group = eventInfoExtractor.GetGroupFromLine(positionedLineToProc);
             for (std::vector<LocatedEvent>::reverse_iterator iter = events.rbegin(); iter != events.rend(); ++iter)
@@ -574,6 +578,8 @@ void FindExtendedEventInRange(ExtendedEventPattern const& pattern, IPositionedLi
                     break;
                 }
             }
+
+            lines[i].Position.Matched = true;
         }
     }
 
@@ -593,7 +599,7 @@ std::vector<Event> LocatedEventsToEvents(std::vector<LocatedEvent> const& locate
     return result;
 }
 
-void FindEventsInRange(IMatchableEventPattern const& pattern, IPositionedLinesStorage const& lines,
+void FindEventsInRange(IMatchableEventPattern const& pattern, IPositionedLinesStorage& lines,
     const int level, std::size_t const firstInd, std::size_t const lastInd, std::vector<LocatedEvent>& events,
                        IEventInfoExtractor const& eventInfoExtractor)
 {
@@ -632,7 +638,7 @@ void GetPattertsOfSelectedLevel(
 
 } // namespace
 
-std::vector<std::vector<Event>> FindEvents(const EventPatternsHierarchy& patterns, const IPositionedLinesStorage& lines,
+std::vector<std::vector<Event>> FindEvents(const EventPatternsHierarchy& patterns, IPositionedLinesStorage& lines,
                                            IEventInfoExtractor const& eventInfoExtractor)
 {
     if (lines.Size() == 0)
