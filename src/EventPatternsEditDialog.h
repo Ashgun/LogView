@@ -6,7 +6,7 @@
 #include <QPushButton>
 
 #include "EventPatternEditWidget.h"
-#include "EventsTreeWidget.h"
+#include "EventsTreeEditWidget.h"
 
 #include "Events.h"
 
@@ -24,7 +24,6 @@ public:
     EventPatternsHierarchy GetEventPatternsHierarchy() const;
 
 private:
-    void UpdateItemByEventPatternEdit(QTreeWidgetItem *item);
     void AcceptState();
 
 signals:
@@ -34,18 +33,18 @@ protected slots:
     void slot_rejected();
     void slot_open();
     void slot_save();
-    void slot_eventsTree_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
-    void slot_addEventPatternButton_clicked(bool);
-    void slot_deleteEventPatternButton_clicked(bool);
+
+    void slot_ItemChanged(EventsTreeEditWidget* treeEditWidget);
 
 private:
-    EventsTreeWidget* gui_eventsTree;
     EventPatternEditWidget* gui_eventsEdit;
 
-    QPushButton* gui_addEventPatternButton;
-    QPushButton* gui_deleteEventPatternButton;
+    std::unique_ptr<FocusCapturingNotifier> m_FocusCapturingNotifier = GetFocusCapturingNotifier();
 
-    std::map<QTreeWidgetItem*, IMatchableEventPatternPtr> m_mapTreeItemsToEventPatterns;
+    EventsTreeEditWidget* gui_eventsTree;
+    EventsTreeEditWidget* gui_globalEventsTree;
+
+    EventsTreeEditWidget* m_currentEventsTree;
 
     QString m_openedFileName;
 };

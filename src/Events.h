@@ -121,8 +121,10 @@ struct EventPatternsHierarchyNode
 struct EventPatternsHierarchy
 {
     std::vector<EventPatternsHierarchyNode> TopLevelNodes;
+    std::vector<EventPatternsHierarchyNode> GlobalUnexpectedEventPatterns;
 
     void AddEventPattern(IMatchableEventPatternPtr event);
+    void AddGlobalUnexpectedEventPattern(IMatchableEventPatternPtr event);
 
 public:
     static QString toJson(const EventPatternsHierarchy& patterns);

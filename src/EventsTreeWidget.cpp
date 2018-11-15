@@ -26,6 +26,12 @@ EventsTreeWidget::EventsTreeWidget()
 //    }
 }
 
+void EventsTreeWidget::mouseReleaseEvent(QMouseEvent* event)
+{
+    emit clicked();
+    QTreeView::mouseReleaseEvent(event);
+}
+
 void EventsTreeWidget::dropEvent(QDropEvent* event)
 {
     QModelIndex droppedIndex = indexAt(event->pos());

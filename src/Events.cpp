@@ -8,6 +8,7 @@
 #include <memory>
 #include <stdexcept>
 #include <sstream>
+#include <functional>
 
 SingleEventPattern::SingleEventPattern(const QString& name, const EventPattern::PatternType& patternType,
     const EventPattern::PatternString& patternString, const IMatchableEventPattern::Color& color) :
@@ -156,6 +157,12 @@ void EventPatternsHierarchy::AddEventPattern(IMatchableEventPatternPtr event)
     TopLevelNodes.back().Event = std::move(event);
 }
 
+void EventPatternsHierarchy::AddGlobalUnexpectedEventPattern(IMatchableEventPatternPtr event)
+{
+    GlobalUnexpectedEventPatterns.push_back(EventPatternsHierarchyNode());
+    GlobalUnexpectedEventPatterns.back().Event = std::move(event);
+}
+
 namespace
 {
 
@@ -242,6 +249,22 @@ QString EventPatternsHierarchy::toJson(const EventPatternsHierarchy& patterns)
         groupInfoArray.append(value);
     }
     root["EventPatternsHierarchyNodes"] = groupInfoArray;
+
+    groupInfoArray = Json::Value(Json::ValueType::arrayValue);
+    for (const auto& node : patterns.GlobalUnexpectedEventPatterns)
+    {
+        Json::Value value = EventToJson(node.Event.get());
+
+        Json::Value subEvents(Json::ValueType::arrayValue);
+        for (const auto& subEvent : node.SubEvents)
+        {
+            subEvents.append(EventPatternsHierarchyNodeToJson(subEvent));
+        }
+        value["SubEvents"] = subEvents;
+
+        groupInfoArray.append(value);
+    }
+    root["GlobalUnexpectedEventPatternsHierarchyNodes"] = groupInfoArray;
 
     std::unique_ptr<Json::StreamWriter> writer(Json::StreamWriterBuilder().newStreamWriter());
     std::stringstream ss;
@@ -355,7 +378,10 @@ void ParsePatternHierarchyNode(EventPatternsHierarchyNode& node, const Json::Val
     }
 }
 
-void ParsePatternHierarchyNode(EventPatternsHierarchy& nodes, const Json::Value& patternHierarchyNode)
+void ParsePatternHierarchyNode(
+        std::function<void(IMatchableEventPatternPtr event)> eventPatterntAddingFunctor,
+        std::function<std::vector<EventPatternsHierarchyNode>&()> subEventsArrayGettingFunctor,
+        const Json::Value& patternHierarchyNode)
 {
     CheckJsonValue(patternHierarchyNode, "PatternName", "EventPatternsHierarchy");
     CheckJsonValue(patternHierarchyNode, "PatternType", "EventPatternsHierarchy");
@@ -372,7 +398,7 @@ void ParsePatternHierarchyNode(EventPatternsHierarchy& nodes, const Json::Value&
                 IMatchableEventPattern::Color::fromColorCode(QString::fromStdString(patternHierarchyNode["Color"].asString()));
 
         CheckJsonValue(patternHierarchyNode, "Pattern", "EventPatternsHierarchy");
-        nodes.AddEventPattern(
+        eventPatterntAddingFunctor(
                     CreateSingleEventPattern(
                         patternName,
                         ParseLinePattern(patternHierarchyNode["Pattern"]),
@@ -394,7 +420,7 @@ void ParsePatternHierarchyNode(EventPatternsHierarchy& nodes, const Json::Value&
             const IMatchableEventPattern::Color altColor =
                     IMatchableEventPattern::Color::fromColorCode(QString::fromStdString(patternHierarchyNode["AltColor"].asString()));
 
-            nodes.AddEventPattern(
+            eventPatterntAddingFunctor(
                         CreateExtendedEventPattern(
                             patternName,
                             ParseLinePattern(patternHierarchyNode["StartPattern"]),
@@ -405,7 +431,7 @@ void ParsePatternHierarchyNode(EventPatternsHierarchy& nodes, const Json::Value&
         }
         else
         {
-            nodes.AddEventPattern(
+            eventPatterntAddingFunctor(
                         CreateExtendedEventPattern(
                             patternName,
                             ParseLinePattern(patternHierarchyNode["StartPattern"]),
@@ -422,7 +448,7 @@ void ParsePatternHierarchyNode(EventPatternsHierarchy& nodes, const Json::Value&
         for (Json::ArrayIndex i = 0; i < patternHierarchyNode["SubEvents"].size(); ++i)
         {
             const Json::Value subEvent = patternHierarchyNode["SubEvents"][i];
-            ParsePatternHierarchyNode(nodes.TopLevelNodes.back(), subEvent);
+            ParsePatternHierarchyNode(subEventsArrayGettingFunctor().back(), subEvent);
         }
     }
 }
@@ -453,7 +479,34 @@ void EventPatternsHierarchy::fromJson(const QString& jsonData, EventPatternsHier
     for (Json::ArrayIndex i = 0; i < root["EventPatternsHierarchyNodes"].size(); ++i)
     {
         const Json::Value patternHierarchyNode = root["EventPatternsHierarchyNodes"][i];
-        ParsePatternHierarchyNode(patterns, patternHierarchyNode);
+        std::function<void(IMatchableEventPatternPtr event)> eventPatterntAddingFunctor =
+                [&patterns](IMatchableEventPatternPtr event) -> void
+        {
+            patterns.AddEventPattern(std::move(event));
+        };
+        std::function<std::vector<EventPatternsHierarchyNode>&()> subEventsArrayGettingFunctor =
+                [&patterns]() -> std::vector<EventPatternsHierarchyNode>&
+        {
+            return patterns.TopLevelNodes;
+        };
+        ParsePatternHierarchyNode(eventPatterntAddingFunctor, subEventsArrayGettingFunctor, patternHierarchyNode);
+    }
+
+    patterns.GlobalUnexpectedEventPatterns.reserve(static_cast<std::size_t>(root["GlobalUnexpectedEventPatternsHierarchyNodes"].size()));
+    for (Json::ArrayIndex i = 0; i < root["GlobalUnexpectedEventPatternsHierarchyNodes"].size(); ++i)
+    {
+        const Json::Value patternHierarchyNode = root["GlobalUnexpectedEventPatternsHierarchyNodes"][i];
+        std::function<void(IMatchableEventPatternPtr event)> eventPatterntAddingFunctor =
+                [&patterns](IMatchableEventPatternPtr event) -> void
+        {
+            patterns.AddGlobalUnexpectedEventPattern(std::move(event));
+        };
+        std::function<std::vector<EventPatternsHierarchyNode>&()> subEventsArrayGettingFunctor =
+                [&patterns]() -> std::vector<EventPatternsHierarchyNode>&
+        {
+            return patterns.GlobalUnexpectedEventPatterns;
+        };
+        ParsePatternHierarchyNode(eventPatterntAddingFunctor, subEventsArrayGettingFunctor, patternHierarchyNode);
     }
 }
 
@@ -647,6 +700,25 @@ std::vector<std::vector<Event>> FindEvents(const EventPatternsHierarchy& pattern
     }
 
     std::vector<std::vector<Event>> result;
+    for (int level = 0; level < 10; ++level)
+    {
+        std::vector<EventPatternsHierarchyNode> eventsOfSelectedLevel;
+        GetPattertsOfSelectedLevel(patterns.TopLevelNodes, level, 0, eventsOfSelectedLevel, eventInfoExtractor);
+
+        std::vector<LocatedEvent> locatedEvents;
+        for (std::size_t i = 0; i < eventsOfSelectedLevel.size(); ++i)
+        {
+            FindEventsInRange(*eventsOfSelectedLevel[i].Event, lines, level, 0, lines.Size(), locatedEvents, eventInfoExtractor);
+        }
+
+        if (level > 0 && locatedEvents.empty())
+        {
+            break;
+        }
+
+        result.push_back(LocatedEventsToEvents(locatedEvents));
+    }
+
     for (int level = 0; level < 10; ++level)
     {
         std::vector<EventPatternsHierarchyNode> eventsOfSelectedLevel;

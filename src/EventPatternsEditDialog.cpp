@@ -47,29 +47,20 @@ void AddTreeItemChildrenToHierarchy(
     }
 }
 
-IMatchableEventPatternPtr CreateDefaultEventPattern(const QString& eventPatternName)
-{
-    return CreateSingleEventPattern(
-                eventPatternName,
-                EventPattern::CreateStringPattern(""),
-                CreateColor(255, 255, 255));
-}
-
-
 } // namespace
 
 EventPatternsEditDialog::EventPatternsEditDialog(QWidget *parent) :
     QDialog(parent)
 {
-    setMinimumSize(800, 600);
-
-    gui_eventsTree = new EventsTreeWidget();
-    gui_eventsTree->setHeaderLabels(QStringList() << tr("Event patterns"));
-    gui_addEventPatternButton = new QPushButton(tr("Add event pattern"));
-    gui_deleteEventPatternButton = new QPushButton(tr("Delete event pattern"));
-    gui_deleteEventPatternButton->setEnabled(false);
+    setMinimumSize(800, 800);
 
     gui_eventsEdit = new EventPatternEditWidget();
+
+    gui_eventsTree = new EventsTreeEditWidget(gui_eventsEdit, m_FocusCapturingNotifier.get());
+    gui_globalEventsTree = new EventsTreeEditWidget(gui_eventsEdit, m_FocusCapturingNotifier.get());
+
+    m_FocusCapturingNotifier->RegisterObserver(gui_eventsTree);
+    m_FocusCapturingNotifier->RegisterObserver(gui_globalEventsTree);
 
     QDialogButtonBox* buttons = new QDialogButtonBox(Qt::Orientation::Horizontal);
     buttons->addButton(QDialogButtonBox::Open);
@@ -83,17 +74,11 @@ EventPatternsEditDialog::EventPatternsEditDialog(QWidget *parent) :
         QHBoxLayout* box = new QHBoxLayout;
 
         {
-            QVBoxLayout* treeEditBox = new QVBoxLayout;
-            treeEditBox->addWidget(gui_eventsTree);
+            QVBoxLayout* treesEditBox = new QVBoxLayout;
+            treesEditBox->addWidget(gui_eventsTree);
+            treesEditBox->addWidget(gui_globalEventsTree);
 
-            {
-                QHBoxLayout* buttonBox = new QHBoxLayout;
-                buttonBox->addWidget(gui_addEventPatternButton);
-                buttonBox->addWidget(gui_deleteEventPatternButton);
-                treeEditBox->addLayout(buttonBox);
-            }
-
-            box->addLayout(treeEditBox);
+            box->addLayout(treesEditBox);
         }
 
         box->addWidget(gui_eventsEdit);
@@ -105,19 +90,17 @@ EventPatternsEditDialog::EventPatternsEditDialog(QWidget *parent) :
 
     setLayout(topLevelBox);
 
-    connect(gui_eventsTree, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
-            this, SLOT(slot_eventsTree_currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
-            Qt::DirectConnection);
-
 //    connect(buttons->button(QDialogButtonBox::Ok), SIGNAL(clicked()), SLOT(slot_accepted()), Qt::DirectConnection);
     connect(buttons->button(QDialogButtonBox::Cancel), SIGNAL(clicked()), SLOT(slot_rejected()), Qt::DirectConnection);
     connect(buttons->button(QDialogButtonBox::Open), SIGNAL(clicked()), SLOT(slot_open()), Qt::DirectConnection);
     connect(buttons->button(QDialogButtonBox::Save), SIGNAL(clicked()), SLOT(slot_save()), Qt::DirectConnection);
 
-    connect(gui_addEventPatternButton, SIGNAL(clicked(bool)),
-            this, SLOT(slot_addEventPatternButton_clicked(bool)), Qt::DirectConnection);
-    connect(gui_deleteEventPatternButton, SIGNAL(clicked(bool)),
-            this, SLOT(slot_deleteEventPatternButton_clicked(bool)), Qt::DirectConnection);
+    connect(gui_eventsTree, SIGNAL(ItemChanged(EventsTreeEditWidget*)),
+            this, SLOT(slot_ItemChanged(EventsTreeEditWidget*)), Qt::DirectConnection);
+    connect(gui_globalEventsTree, SIGNAL(ItemChanged(EventsTreeEditWidget*)),
+            this, SLOT(slot_ItemChanged(EventsTreeEditWidget*)), Qt::DirectConnection);
+
+    m_currentEventsTree = nullptr;
 }
 
 void EventPatternsEditDialog::SetEventPatternsHierarchy(const EventPatternsHierarchy& eventPatternsHierarchy)
@@ -125,47 +108,61 @@ void EventPatternsEditDialog::SetEventPatternsHierarchy(const EventPatternsHiera
     for (const auto& eventPattern : eventPatternsHierarchy.TopLevelNodes)
     {
         QTreeWidgetItem* item = new QTreeWidgetItem(QStringList() << eventPattern.Event->Name);
-        m_mapTreeItemsToEventPatterns[item] = eventPattern.Event->Clone();
-        gui_eventsTree->addTopLevelItem(item);
+        gui_eventsTree->GetItemsMap()[item] = eventPattern.Event->Clone();
+        gui_eventsTree->AddTopLevelItem(item);
 
-        AddSubEventPatternsToTree(item, eventPattern.SubEvents, m_mapTreeItemsToEventPatterns);
+        AddSubEventPatternsToTree(item, eventPattern.SubEvents, gui_eventsTree->GetItemsMap());
     }
 
-    gui_eventsTree->expandAll();
-    gui_eventsTree->clearSelection();
+    gui_eventsTree->ExpandAll();
+    gui_eventsTree->ClearSelection();
+
+    for (const auto& eventPattern : eventPatternsHierarchy.GlobalUnexpectedEventPatterns)
+    {
+        QTreeWidgetItem* item = new QTreeWidgetItem(QStringList() << eventPattern.Event->Name);
+        gui_globalEventsTree->GetItemsMap()[item] = eventPattern.Event->Clone();
+        gui_globalEventsTree->AddTopLevelItem(item);
+
+        AddSubEventPatternsToTree(item, eventPattern.SubEvents, gui_globalEventsTree->GetItemsMap());
+    }
+
+    gui_globalEventsTree->ExpandAll();
+    gui_globalEventsTree->ClearSelection();
 }
 
 EventPatternsHierarchy EventPatternsEditDialog::GetEventPatternsHierarchy() const
 {
     EventPatternsHierarchy result;
 
-    for (int i = 0; i < gui_eventsTree->topLevelItemCount(); ++i)
+    for (int i = 0; i < gui_eventsTree->TopLevelItemCount(); ++i)
     {
-        auto item = gui_eventsTree->topLevelItem(i);
-        result.AddEventPattern(m_mapTreeItemsToEventPatterns.at(item)->Clone());
+        auto item = gui_eventsTree->TopLevelItem(i);
+        result.AddEventPattern(gui_eventsTree->GetItemsMap().at(item)->Clone());
 
         if (item->childCount() > 0)
         {
-            AddTreeItemChildrenToHierarchy(item, m_mapTreeItemsToEventPatterns, result.TopLevelNodes.back());
+            AddTreeItemChildrenToHierarchy(item, gui_eventsTree->GetItemsMap(), result.TopLevelNodes.back());
+        }
+    }
+
+    for (int i = 0; i < gui_globalEventsTree->TopLevelItemCount(); ++i)
+    {
+        auto item = gui_globalEventsTree->TopLevelItem(i);
+        result.AddGlobalUnexpectedEventPattern(gui_globalEventsTree->GetItemsMap().at(item)->Clone());
+
+        if (item->childCount() > 0)
+        {
+            AddTreeItemChildrenToHierarchy(item, gui_globalEventsTree->GetItemsMap(), result.GlobalUnexpectedEventPatterns.back());
         }
     }
 
     return result;
 }
 
-void EventPatternsEditDialog::UpdateItemByEventPatternEdit(QTreeWidgetItem* item)
-{
-    m_mapTreeItemsToEventPatterns[item] = gui_eventsEdit->GetPattern();
-    item->setText(0, m_mapTreeItemsToEventPatterns[item]->Name);
-}
-
 void EventPatternsEditDialog::AcceptState()
 {
-    QTreeWidgetItem* currentItem = gui_eventsTree->currentItem();
-    if (currentItem != nullptr)
-    {
-        UpdateItemByEventPatternEdit(currentItem);
-    }
+    gui_eventsTree->AcceptState();
+    gui_globalEventsTree->AcceptState();
 }
 
 void EventPatternsEditDialog::slot_accepted()
@@ -214,52 +211,7 @@ void EventPatternsEditDialog::slot_save()
    SaveQStringToFile(eventsParsingConfigJson, m_openedFileName);
 }
 
-void EventPatternsEditDialog::slot_eventsTree_currentItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* previous)
+void EventPatternsEditDialog::slot_ItemChanged(EventsTreeEditWidget* /*treeEditWidget*/)
 {
-    if (previous != nullptr)
-    {
-        UpdateItemByEventPatternEdit(previous);
-    }
-
-    if (current != nullptr)
-    {
-        gui_eventsEdit->SetLinePattern(m_mapTreeItemsToEventPatterns[current].get());
-    }
-
-    gui_deleteEventPatternButton->setEnabled(current != nullptr);
 }
 
-void EventPatternsEditDialog::slot_addEventPatternButton_clicked(bool)
-{
-    auto currentItem = gui_eventsTree->currentItem();
-
-    const QString baseEventPatternName = "New event pattern";
-    IMatchableEventPatternPtr eventPattern = CreateDefaultEventPattern(baseEventPatternName);
-    QTreeWidgetItem* item = nullptr;
-    if (currentItem == nullptr)
-    {
-        item = new QTreeWidgetItem(QStringList() << eventPattern->Name);
-        gui_eventsTree->addTopLevelItem(item);
-    }
-    else
-    {
-        item = new QTreeWidgetItem(currentItem, QStringList() << eventPattern->Name);
-    }
-
-    m_mapTreeItemsToEventPatterns[item] = std::move(eventPattern);
-    gui_eventsTree->expandAll();
-    gui_eventsTree->setCurrentItem(item);
-}
-
-void EventPatternsEditDialog::slot_deleteEventPatternButton_clicked(bool)
-{
-    auto currentItem = gui_eventsTree->currentItem();
-
-    if (currentItem == nullptr)
-    {
-        return;
-    }
-
-    m_mapTreeItemsToEventPatterns.erase(currentItem);
-    delete currentItem;
-}
