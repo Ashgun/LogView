@@ -62,7 +62,7 @@ void FilesIndexer::AddFileIndexes(const QString& filename)
                                 std::string(bufferData + previousEol, bufferData + currentEol));
 
                     LinePosition const pos(
-                                static_cast<FileOffset>(bufferStartOffset + previousEol + m_fileIndex * 1 * 1024 * 1024 * 1024),
+                                static_cast<FileOffset>(bufferStartOffset + previousEol + m_fileIndex * 1 * 1024 * 1024 * 1024 * 1024),
                                 m_fileIndex, m_linePositionStorage.Size(), currentLineNumber++);
                     m_linePositionStorage.AddPosition(pos);
 

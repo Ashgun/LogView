@@ -1,5 +1,7 @@
 #include "EventsGraphicsScene.h"
 
+#include "Common.h"
+
 #include <QApplication>
 
 namespace ViewParams
@@ -108,8 +110,12 @@ std::list<EventGraphicsItem*> GenerateEventViewItems(
                      eventLevels[level][i].StartLine.Position.NumberInMatchedLines) * ViewParams::BaseEventHeight +
                     ViewParams::BaseEventHeight - ViewParams::VerticalSpace;
 
-            const qreal groupViewWidth = viewSceneWidth / overlappedGroupsCountForLevel[level];
-            const qreal shiftX = ViewParams::BaseHorizontalSkip + eventLevels[level][i].Level * ViewParams::BaseHorizontalSkip;
+            const qreal groupViewWidth = viewSceneWidth / overlappedGroupsCountForLevel[level];            
+            const int usedLevel =
+                    eventLevels[level][i].Level == Constants::SpecialEventsLevels::GlobalEventsLevel ?
+                        1 :
+                        eventLevels[level][i].Level;
+            const qreal shiftX = ViewParams::BaseHorizontalSkip + usedLevel * ViewParams::BaseHorizontalSkip;
             const qreal x = shiftX + groupViewWidth * groupIndex;
             const qreal width = groupViewWidth - 2 * shiftX;
 

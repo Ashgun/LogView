@@ -13,6 +13,13 @@ static const QString ConfigFilesFilter = QObject::tr("JSON files (*.json)");
 
 static const QString RecentDataConfig = "RecentData.ini";
 
+namespace SpecialEventsLevels
+{
+
+static const int GlobalEventsLevel = 100;
+
+} // namespace SpecialEventsLevels
+
 } // namespace Constants
 
 #endif // COMMON_H

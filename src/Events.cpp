@@ -1,6 +1,8 @@
 #include "Events.h"
 #include "IPositionedLinesStorage.h"
 
+#include "Common.h"
+
 #include <json/reader.h>
 #include <json/value.h>
 #include <json/writer.h>
@@ -126,6 +128,15 @@ int EventPatternsHierarchyMatcher::GetLevelInHierarchy(const QString& line) cons
         if (level >= 0)
         {
             return level;
+        }
+    }
+
+    for (std::size_t i = 0; i < EventPatterns.GlobalUnexpectedEventPatterns.size(); ++i)
+    {
+        int const level = GetLevelInHierarchyImpl(EventPatterns.GlobalUnexpectedEventPatterns[i], line, 0);
+        if (level >= 0)
+        {
+            return Constants::SpecialEventsLevels::GlobalEventsLevel + level;
         }
     }
 
@@ -668,7 +679,7 @@ void FindEventsInRange(IMatchableEventPattern const& pattern, IPositionedLinesSt
     }
 }
 
-void GetPattertsOfSelectedLevel(
+void GetPatternsOfSelectedLevel(
     std::vector<EventPatternsHierarchyNode> const& patterns, int const requiredLevel, int const currentLevel,
     std::vector<EventPatternsHierarchyNode>& result, IEventInfoExtractor const& eventInfoExtractor)
 {
@@ -684,7 +695,7 @@ void GetPattertsOfSelectedLevel(
     {
         for (std::size_t i = 0; i < patterns.size(); ++i)
         {
-            GetPattertsOfSelectedLevel(patterns[i].SubEvents, requiredLevel, currentLevel + 1, result, eventInfoExtractor);
+            GetPatternsOfSelectedLevel(patterns[i].SubEvents, requiredLevel, currentLevel + 1, result, eventInfoExtractor);
         }
     }
 }
@@ -703,7 +714,7 @@ std::vector<std::vector<Event>> FindEvents(const EventPatternsHierarchy& pattern
     for (int level = 0; level < 10; ++level)
     {
         std::vector<EventPatternsHierarchyNode> eventsOfSelectedLevel;
-        GetPattertsOfSelectedLevel(patterns.TopLevelNodes, level, 0, eventsOfSelectedLevel, eventInfoExtractor);
+        GetPatternsOfSelectedLevel(patterns.TopLevelNodes, level, 0, eventsOfSelectedLevel, eventInfoExtractor);
 
         std::vector<LocatedEvent> locatedEvents;
         for (std::size_t i = 0; i < eventsOfSelectedLevel.size(); ++i)
@@ -719,10 +730,12 @@ std::vector<std::vector<Event>> FindEvents(const EventPatternsHierarchy& pattern
         result.push_back(LocatedEventsToEvents(locatedEvents));
     }
 
-    for (int level = 0; level < 10; ++level)
     {
+        const int level = Constants::SpecialEventsLevels::GlobalEventsLevel;
+        const int patternEventLevel = 0;
+
         std::vector<EventPatternsHierarchyNode> eventsOfSelectedLevel;
-        GetPattertsOfSelectedLevel(patterns.TopLevelNodes, level, 0, eventsOfSelectedLevel, eventInfoExtractor);
+        GetPatternsOfSelectedLevel(patterns.GlobalUnexpectedEventPatterns, patternEventLevel, 0, eventsOfSelectedLevel, eventInfoExtractor);
 
         std::vector<LocatedEvent> locatedEvents;
         for (std::size_t i = 0; i < eventsOfSelectedLevel.size(); ++i)
@@ -730,12 +743,18 @@ std::vector<std::vector<Event>> FindEvents(const EventPatternsHierarchy& pattern
             FindEventsInRange(*eventsOfSelectedLevel[i].Event, lines, level, 0, lines.Size(), locatedEvents, eventInfoExtractor);
         }
 
-        if (level > 0 && locatedEvents.empty())
+        if (!locatedEvents.empty())
         {
-            break;
+            if (result.size() < 2)
+            {
+                result.push_back(LocatedEventsToEvents(locatedEvents));
+            }
+            else
+            {
+                const auto globalEvents = LocatedEventsToEvents(locatedEvents);
+                std::copy(globalEvents.cbegin(), globalEvents.cend(), std::back_inserter(result[1]));
+            }
         }
-
-        result.push_back(LocatedEventsToEvents(locatedEvents));
     }
 
     return result;
