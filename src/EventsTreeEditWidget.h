@@ -30,8 +30,20 @@ std::unique_ptr<FocusCapturingNotifier> GetFocusCapturingNotifier();
 class EventsTreeEditWidget : public QWidget
 {
     Q_OBJECT
+
 public:
-    explicit EventsTreeEditWidget(EventPatternEditWidget* eventsEdit, FocusCapturingNotifier* focusCapturingNotifier, QWidget *parent = nullptr);
+    enum PatternAddingPolicy
+    {
+        AddToTree,
+        AddToTopLevelOnly
+    };
+
+public:
+    explicit EventsTreeEditWidget(
+            EventPatternEditWidget* eventsEdit,
+            FocusCapturingNotifier* focusCapturingNotifier,
+            const PatternAddingPolicy patternAddingPolicy,
+            QWidget *parent = nullptr);
 
     std::map<QTreeWidgetItem*, IMatchableEventPatternPtr>& GetItemsMap();
 
@@ -63,6 +75,7 @@ public slots:
 private:
     EventsTreeWidget* gui_eventsTree;
     FocusCapturingNotifier* m_focusCapturingNotifier;
+    const PatternAddingPolicy m_patternAddingPolicy;
 
     EventPatternEditWidget* gui_eventsEdit;
 

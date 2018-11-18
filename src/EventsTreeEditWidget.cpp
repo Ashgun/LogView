@@ -21,9 +21,13 @@ IMatchableEventPatternPtr CreateDefaultEventPattern(const QString& eventPatternN
 } // namespace
 
 EventsTreeEditWidget::EventsTreeEditWidget(
-        EventPatternEditWidget* eventsEdit, FocusCapturingNotifier* focusCapturingNotifier, QWidget *parent) :
+        EventPatternEditWidget* eventsEdit,
+        FocusCapturingNotifier* focusCapturingNotifier,
+        const PatternAddingPolicy patternAddingPolicy,
+        QWidget *parent) :
     QWidget(parent),
     m_focusCapturingNotifier(focusCapturingNotifier),
+    m_patternAddingPolicy(patternAddingPolicy),
     gui_eventsEdit(eventsEdit)
 {
     setMinimumWidth(375);
@@ -107,8 +111,6 @@ void EventsTreeEditWidget::UpdateEventPatternEditIfPossible(QTreeWidgetItem* ite
 
 void EventsTreeEditWidget::slot_eventsTree_clicked()
 {
-    qDebug() << long(this) << __FUNCTION__ << "+";
-
     QTreeWidgetItem *current = gui_eventsTree->currentItem();
     if (current != nullptr)
     {
@@ -119,7 +121,6 @@ void EventsTreeEditWidget::slot_eventsTree_clicked()
 
 void EventsTreeEditWidget::slot_eventsTree_currentItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* previous)
 {
-    qDebug() << long(this) << "*";
     if (!m_FocusLost)
     {
         if (previous != nullptr)
@@ -128,7 +129,6 @@ void EventsTreeEditWidget::slot_eventsTree_currentItemChanged(QTreeWidgetItem* c
         }
     }
 
-    qDebug() << long(this) << __FUNCTION__ << "+";
     CaptureFocus();
 
     UpdateEventPatternEditIfPossible(current);
@@ -138,13 +138,14 @@ void EventsTreeEditWidget::slot_eventsTree_currentItemChanged(QTreeWidgetItem* c
 
 void EventsTreeEditWidget::slot_addEventPatternButton_clicked(bool)
 {
-    qDebug() << long(this) << __FUNCTION__ << "+";
     CaptureFocus();
-
-    auto currentItem = gui_eventsTree->currentItem();
 
     const QString baseEventPatternName = "New event pattern";
     IMatchableEventPatternPtr eventPattern = CreateDefaultEventPattern(baseEventPatternName);
+
+    QTreeWidgetItem* currentItem =
+            m_patternAddingPolicy == PatternAddingPolicy::AddToTree ?
+                gui_eventsTree->currentItem() : nullptr;
     QTreeWidgetItem* item = nullptr;
     if (currentItem == nullptr)
     {
@@ -179,8 +180,6 @@ void EventsTreeEditWidget::CaptureFocus()
 
 void EventsTreeEditWidget::LooseFocus()
 {
-    qDebug() << long(this) << "-";
-
     if (!m_FocusLost && !m_savedOnFocusLoose)
     {
         AcceptState();
@@ -192,7 +191,6 @@ void EventsTreeEditWidget::LooseFocus()
 
 void EventsTreeEditWidget::slot_deleteEventPatternButton_clicked(bool)
 {
-    qDebug() << long(this) << __FUNCTION__ << "+";
     CaptureFocus();
 
     auto currentItem = gui_eventsTree->currentItem();

@@ -56,8 +56,10 @@ EventPatternsEditDialog::EventPatternsEditDialog(QWidget *parent) :
 
     gui_eventsEdit = new EventPatternEditWidget();
 
-    gui_eventsTree = new EventsTreeEditWidget(gui_eventsEdit, m_FocusCapturingNotifier.get());
-    gui_globalEventsTree = new EventsTreeEditWidget(gui_eventsEdit, m_FocusCapturingNotifier.get());
+    gui_eventsTree = new EventsTreeEditWidget(
+                         gui_eventsEdit, m_FocusCapturingNotifier.get(), EventsTreeEditWidget::PatternAddingPolicy::AddToTree);
+    gui_globalEventsTree = new EventsTreeEditWidget(
+                         gui_eventsEdit, m_FocusCapturingNotifier.get(), EventsTreeEditWidget::PatternAddingPolicy::AddToTopLevelOnly);
 
     m_FocusCapturingNotifier->RegisterObserver(gui_eventsTree);
     m_FocusCapturingNotifier->RegisterObserver(gui_globalEventsTree);
