@@ -42,14 +42,14 @@ void FilesIndexer::AddFileIndexes(const QString& filename)
 
         while (!in.atEnd())
         {
-            std::size_t const readBytesCount = in.readRawData(bufferData, bufferSize);
+            quint64 const readBytesCount = static_cast<quint64>(in.readRawData(bufferData, bufferSize));
 
             bool lineAdded = false;
 
-            std::size_t previousEol = 0;
-            std::size_t currentEol = 0;
-            std::size_t currentLineNumber = 0;
-            for (std::size_t i = 0; i < readBytesCount; ++i)
+            quint64 previousEol = 0;
+            quint64 currentEol = 0;
+            quint64 currentLineNumber = 0;
+            for (quint64 i = 0; i < readBytesCount; ++i)
             {
                 if (IsEndOfLineSymbol(bufferData[i]))
                 {
@@ -62,7 +62,7 @@ void FilesIndexer::AddFileIndexes(const QString& filename)
                                 std::string(bufferData + previousEol, bufferData + currentEol));
 
                     LinePosition const pos(
-                                static_cast<FileOffset>(bufferStartOffset + previousEol + m_fileIndex * 1 * 1024 * 1024 * 1024 * 1024),
+                                static_cast<FileOffset>(bufferStartOffset + previousEol + static_cast<quint64>(m_fileIndex) * 1 * 1024 * 1024 * 1024 * 1024),
                                 m_fileIndex, m_linePositionStorage.Size(), currentLineNumber++);
                     m_linePositionStorage.AddPosition(pos);
 

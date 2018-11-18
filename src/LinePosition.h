@@ -3,7 +3,7 @@
 
 #include <QString>
 
-typedef quint32 LineNumber;
+typedef quint64 LineNumber;
 
 typedef quint64 FileOffset;
 typedef quint8 FileIndex;
