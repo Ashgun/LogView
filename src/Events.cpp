@@ -775,14 +775,14 @@ namespace
 bool IsPositionedLineBetweenTwoOthers(PositionedLine const& checkedLine, PositionedLine const& rangeStart,
                                      PositionedLine const& rangeEnd)
 {
-    if (rangeEnd.Position.Offset < rangeStart.Position.Offset)
+    if (rangeEnd.Position.NumberInMatchedLines < rangeStart.Position.NumberInMatchedLines)
     {
         return IsPositionedLineBetweenTwoOthers(checkedLine, rangeEnd, rangeStart);
     }
 
     return
-        checkedLine.Position.Offset >= rangeStart.Position.Offset &&
-        checkedLine.Position.Offset <= rangeEnd.Position.Offset;
+        checkedLine.Position.NumberInMatchedLines >= rangeStart.Position.NumberInMatchedLines &&
+        checkedLine.Position.NumberInMatchedLines <= rangeEnd.Position.NumberInMatchedLines;
 }
 
 } // namespace
@@ -803,7 +803,7 @@ int CheckEventsOrder(const Event& l, const Event& r)
         return 0;
     }
 
-    if (l.EndLine.Position.Offset < r.StartLine.Position.Offset)
+    if (l.EndLine.Position.NumberInMatchedLines < r.StartLine.Position.NumberInMatchedLines)
     {
         return -1;
     }
@@ -825,8 +825,6 @@ bool operator<(const Event& lhs, const Event& rhs)
 {
     return CheckEventsOrder(lhs, rhs) < 0;
 }
-
-#include <QDebug>
 
 EventHierarchyInfoForLines GetHierarchyInfoForLines(const IPositionedLinesStorage& positionedLinesStorage, const std::vector<std::vector<Event> >& eventLevels)
 {

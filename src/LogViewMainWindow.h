@@ -25,7 +25,7 @@ public:
     explicit LogViewMainWindow(QWidget *parent = nullptr);
     ~LogViewMainWindow() override;
 
-    void LoadLog(const QString& filename, const QString& eventsParsingConfigJson);
+    void LoadLogs(const QStringList& filenames, const QString& eventsParsingConfigJson);
     void LoadLogView();
 
 signals:
@@ -62,7 +62,7 @@ private:
     std::unique_ptr<IPositionedLinesStorage> m_linesStorage;
     std::vector<std::vector<Event>> m_eventLevels;
 
-    QString m_loadedFile;
+    QStringList m_loadedFiles;
 
     std::unique_ptr<IEventInfoExtractor> m_infoExtractor;
 

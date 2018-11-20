@@ -12,11 +12,11 @@ public:
 
     int exec() override;
 
-    QString GetOpenLogFileName();
+    QStringList GetOpenLogFileNames();
     QString GetEventPatternConfig();
 
 private:
-    QString m_LogFileName;
+    QStringList m_LogFileName;
     QString m_HeaderParsingConfig;
     QString m_EventPatternConfig;
 

@@ -110,7 +110,7 @@ std::list<EventGraphicsItem*> GenerateEventViewItems(
                      eventLevels[level][i].StartLine.Position.NumberInMatchedLines) * ViewParams::BaseEventHeight +
                     ViewParams::BaseEventHeight - ViewParams::VerticalSpace;
 
-            const qreal groupViewWidth = viewSceneWidth / overlappedGroupsCountForLevel[level];            
+            const qreal groupViewWidth = viewSceneWidth / overlappedGroupsCountForLevel[level];
             const int usedLevel =
                     eventLevels[level][i].Level == Constants::SpecialEventsLevels::GlobalEventsLevel ?
                         1 :

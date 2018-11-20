@@ -6,7 +6,10 @@ LogFileWithConfigsOpenDialog::LogFileWithConfigsOpenDialog(QWidget* parent) : QF
 {
     setMinimumSize(1024, 700);
     setOption(QFileDialog::DontUseNativeDialog, true);
+    setAcceptMode(QFileDialog::AcceptMode::AcceptOpen);
+    setWindowTitle(tr("Open log files sequence"));
     setNameFilter(tr("Log files (*.log)"));
+    setFileMode(QFileDialog::ExistingFiles);
 
     gui_RecentEventPatternConfigWidget = new RecentFilesWidget("RecentEventPatternConfig", tr("Event pattern config"));
 
@@ -21,17 +24,18 @@ int LogFileWithConfigsOpenDialog::exec()
     int /*QDialog::DialogCode*/ dialog_code = QFileDialog::exec();
 
     if (dialog_code != QDialog::Accepted ||
-        gui_RecentEventPatternConfigWidget->GetSelectedFile().isEmpty()) {
+        gui_RecentEventPatternConfigWidget->GetSelectedFile().isEmpty())
+    {
         return QDialog::Rejected;
     }
 
-    m_LogFileName = selectedFiles().first();
+    m_LogFileName = selectedFiles();
     m_EventPatternConfig = gui_RecentEventPatternConfigWidget->GetSelectedFile();
 
     return QDialog::Accepted;
 }
 
-QString LogFileWithConfigsOpenDialog::GetOpenLogFileName()
+QStringList LogFileWithConfigsOpenDialog::GetOpenLogFileNames()
 {
     return m_LogFileName;
 }

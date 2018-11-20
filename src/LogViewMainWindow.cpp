@@ -56,46 +56,71 @@ private:
     QString const m_groupName;
 };
 
-QStringList LoadFileBlockToStrings(const QString& filename, const quint64 from, const quint64 to)
+QStringList LoadFileBlockToStrings(const QString& filename, const quint64 from, const quint64 to,
+                                   std::function<bool(const QString& line)> isLineAcceptableFunctor)
 {
-    QStringList resultList;
-
-    QFile binfile(filename);
-
-    quint64 const bufferSize = to - from;
-    std::vector<char> buffer(static_cast<std::size_t>(bufferSize + 1));
-    char* bufferData = buffer.data();
-
     const auto IsEndOfLineSymbol =
             [](const char& ch) -> bool
             {
                 return ((ch == '\n') || (ch == '\r'));
             };
 
+    QStringList resultList;
+
+    QFile binfile(filename);
+
+    std::size_t const bufferSize = 10 * 1024 * 1024;
+    std::vector<char> buffer(bufferSize + 1);
+    char* bufferData = buffer.data();
     if (binfile.open(QIODevice::ReadOnly))
     {
-        binfile.seek(static_cast<qint64>(from));
+        if (from > 0)
+        {
+            binfile.seek(static_cast<qint64>(from));
+        }
 
         QDataStream in(&binfile);
+        quint64 bufferStartOffset = from;
 
-        std::size_t const readBytesCount = static_cast<std::size_t>(in.readRawData(bufferData, static_cast<int>(bufferSize)));
-
-        std::size_t previousEol = 0;
-        std::size_t currentEol = 0;
-        for (std::size_t i = 0; i < readBytesCount; ++i)
+        while (!in.atEnd())
         {
-            if (IsEndOfLineSymbol(bufferData[i]))
+            quint64 const readBytesCount = static_cast<quint64>(in.readRawData(bufferData, bufferSize));
+
+            quint64 previousEol = 0;
+            quint64 currentEol = 0;
+            for (quint64 i = 0; i < readBytesCount; ++i)
             {
-                currentEol = i;
-                while (IsEndOfLineSymbol(bufferData[i]) && i < readBytesCount) { ++i; }
+                if (IsEndOfLineSymbol(bufferData[i]))
+                {
+                    currentEol = i;
+                    ++i;
+                    while (IsEndOfLineSymbol(bufferData[i]) && i < readBytesCount) { ++i; }
 
-                QString const line = QString::fromStdString(
-                            std::string(bufferData + previousEol, bufferData + currentEol));
-                resultList.append(line);
+                    EventPattern::PatternString const line =
+                            EventPattern::PatternString::fromStdString(
+                                std::string(bufferData + previousEol, bufferData + currentEol));
 
-                previousEol = i;
+                    if (bufferStartOffset + currentEol < to || to == 0)
+                    {
+                        if (isLineAcceptableFunctor(line))
+                        {
+                            resultList.append(line);
+                        }
+                    }
+
+                    previousEol = i;
+                }
             }
+
+            if (bufferStartOffset + currentEol >= to && to > 0)
+            {
+                break;
+            }
+
+            bufferStartOffset += readBytesCount;
         }
+
+        binfile.close();
     }
 
     return resultList;
@@ -179,11 +204,11 @@ LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
 
 LogViewMainWindow::~LogViewMainWindow() = default;
 
-void LogViewMainWindow::LoadLog(
-        const QString& filename,
+void LogViewMainWindow::LoadLogs(
+        const QStringList& filenames,
         const QString& eventsParsingConfigJson)
 {
-    m_loadedFile = filename;
+    m_loadedFiles = filenames;
 
     BaseLinePositionStorage linePositionStorage;
     m_linesStorage = std::make_unique<BasePositionedLinesStorage>();
@@ -208,7 +233,10 @@ void LogViewMainWindow::LoadLog(
     }
 
     FilesIndexer indexer(linePositionStorage, *m_linesStorage, lineSelector);
-    indexer.AddFileIndexes(filename);
+    for (const auto& filename : m_loadedFiles)
+    {
+        indexer.AddFileIndexes(filename);
+    }
 
     m_infoExtractor = std::make_unique<EventInfoExtractor>(m_logLineHeaderParsingParams);
 
@@ -233,7 +261,7 @@ void LogViewMainWindow::LoadLogView()
     Invalidate();
 }
 
-QList<QStringList> LoadLinesForEvent(const Event& event, const QString& filename, const IEventInfoExtractor* groupExtractor)
+QList<QStringList> LoadLinesForEvent(const Event& event, const QStringList& filenames, const IEventInfoExtractor* groupExtractor)
 {
     QList<QStringList> result;
 
@@ -258,18 +286,42 @@ QList<QStringList> LoadLinesForEvent(const Event& event, const QString& filename
             result.append(eventViewData);
         }
 
-        QStringList lines = LoadFileBlockToStrings(
-                                filename,
-                                event.StartLine.Position.Offset, event.EndLine.Position.Offset);
+        std::function<bool(const QString& line)> isLineAcceptableFunctor =
+                [&groupExtractor, &event](const QString& line) -> bool
+        {
+            return groupExtractor == nullptr ||
+                   groupExtractor->GetGroupFromLine(line) == event.Group;
+        };
+
+        QStringList lines;
+
+        if (event.StartLine.Position.Index == event.EndLine.Position.Index)
+        {
+            lines = LoadFileBlockToStrings(
+                                    filenames.at(event.StartLine.Position.Index),
+                                    event.StartLine.Position.Offset, event.EndLine.Position.Offset,
+                                    isLineAcceptableFunctor);
+        }
+        else
+        {
+            lines = LoadFileBlockToStrings(
+                        filenames.at(event.StartLine.Position.Index),
+                        event.StartLine.Position.Offset, 0, isLineAcceptableFunctor);
+
+            for (FileIndex i = event.StartLine.Position.Index + 1; i < event.EndLine.Position.Index - 1; ++i)
+            {
+                lines.append(LoadFileBlockToStrings(filenames.at(i), 0, 0, isLineAcceptableFunctor));
+            }
+
+            lines.append(
+                        LoadFileBlockToStrings(
+                            filenames.at(event.EndLine.Position.Index),
+                            0, event.EndLine.Position.Offset,
+                            isLineAcceptableFunctor));
+        }
 
         for (int i = 1; i < lines.size(); ++i)
         {
-            if (groupExtractor == nullptr ||
-                groupExtractor->GetGroupFromLine(lines[i]) != event.Group)
-            {
-                continue;
-            }
-
             QStringList eventViewData;
             eventViewData
                 << QString::number(event.StartLine.Position.NumberInFile + static_cast<unsigned int>(i) + 1)
@@ -333,7 +385,7 @@ void LogViewMainWindow::slot_EventSelectionChanged()
     QList<QStringList> eventsLogLines;
     for (const auto& currentEventItem : gui_EventsViewScene->GetSelectedEventItems())
     {
-        QList<QStringList> currentEventLogLines = LoadLinesForEvent(currentEventItem->GetEvent(), m_loadedFile, m_infoExtractor.get());
+        QList<QStringList> currentEventLogLines = LoadLinesForEvent(currentEventItem->GetEvent(), m_loadedFiles, m_infoExtractor.get());
         AppendEventLogLinesWithSorting(currentEventLogLines, eventsLogLines, LogLineDataComparator(m_logLineHeaderParsingParams));
     }
 
@@ -361,7 +413,7 @@ void LogViewMainWindow::slot_act_openFileTriggred()
 
     const QString eventsParsingConfigJson = LoadFileToQString(dialog.GetEventPatternConfig());
 
-    LoadLog(dialog.GetOpenLogFileName(), eventsParsingConfigJson);
+    LoadLogs(dialog.GetOpenLogFileNames(), eventsParsingConfigJson);
 }
 
 void LogViewMainWindow::Invalidate()

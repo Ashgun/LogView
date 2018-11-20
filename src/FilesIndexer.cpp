@@ -32,7 +32,7 @@ void FilesIndexer::AddFileIndexes(const QString& filename)
 {
     QFile binfile(filename);
 
-    std::size_t const bufferSize = 1 * 1024 * 1024;
+    std::size_t const bufferSize = 10 * 1024 * 1024;
     std::vector<char> buffer(bufferSize + 1);
     char* bufferData = buffer.data();
     if (binfile.open(QIODevice::ReadOnly))
@@ -62,7 +62,7 @@ void FilesIndexer::AddFileIndexes(const QString& filename)
                                 std::string(bufferData + previousEol, bufferData + currentEol));
 
                     LinePosition const pos(
-                                static_cast<FileOffset>(bufferStartOffset + previousEol + static_cast<quint64>(m_fileIndex) * 1 * 1024 * 1024 * 1024 * 1024),
+                                static_cast<FileOffset>(bufferStartOffset + previousEol),
                                 m_fileIndex, m_linePositionStorage.Size(), currentLineNumber++);
                     m_linePositionStorage.AddPosition(pos);
 
