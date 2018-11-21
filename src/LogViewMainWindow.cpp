@@ -7,6 +7,8 @@
 #include <QScrollBar>
 #include <QSettings>
 #include <QSplitter>
+#include <QFileInfo>
+#include <QDateTime>
 
 #include <QDebug>
 
@@ -209,6 +211,11 @@ void LogViewMainWindow::LoadLogs(
         const QString& eventsParsingConfigJson)
 {
     m_loadedFiles = filenames;
+    std::sort(m_loadedFiles.begin(), m_loadedFiles.end(),
+            [](const QString& l, const QString& r) -> bool
+            {
+                return QFileInfo(l).lastModified() < QFileInfo(r).lastModified();
+            });
 
     BaseLinePositionStorage linePositionStorage;
     m_linesStorage = std::make_unique<BasePositionedLinesStorage>();
