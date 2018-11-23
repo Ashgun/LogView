@@ -4,14 +4,14 @@ RegExpLogLineParser::RegExpLogLineParser(QVector<QPair<QString, QRegExp>> const&
     m_headerRegExps(headerRegExps),
     m_groupRegExp(groupRegExp)
 {
-
 }
 
-RegExpLogLineParser::RegExpLogLineParser(const QVector<QPair<QString, QString>>& headerRegExpsStrs, const QString& groupRegExpStr)
+RegExpLogLineParser::RegExpLogLineParser(
+        const QVector<LogLineHeaderParsingParams::GroupData>& headerRegExpsStrs, const QString& groupRegExpStr)
 {
-    for (QPair<QString, QString> const& rePair : headerRegExpsStrs)
+    for (LogLineHeaderParsingParams::GroupData const& rePair : headerRegExpsStrs)
     {
-        m_headerRegExps.push_back(QPair<QString, QRegExp>(rePair.first, QRegExp(rePair.second)));
+        m_headerRegExps.push_back(QPair<QString, QRegExp>(rePair.Name, QRegExp(rePair.RegExp + rePair.Delimiter)));
     }
 
     m_groupRegExp = QRegExp(groupRegExpStr);

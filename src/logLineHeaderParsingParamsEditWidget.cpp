@@ -21,8 +21,10 @@ LogLineHeaderParsingParamsEditWidget::LogLineHeaderParsingParamsEditWidget(const
     groupingElementLayout->addWidget(new QLabel(tr("Header for sorting:")));
     groupingElementLayout->addWidget(gui_sortingHeaderCombo);
 
-    gui_paramsTable = new QTableWidget(10, 2);
-    gui_paramsTable->setHorizontalHeaderLabels(QStringList() << tr("Header") << tr("RegExp"));
+    QStringList headers;
+    headers << tr("Header") << tr("RegExp") << tr("Delimiter");
+    gui_paramsTable = new QTableWidget(10, headers.size());
+    gui_paramsTable->setHorizontalHeaderLabels(headers);
 
     QVBoxLayout* centralLayout = new QVBoxLayout();
     centralLayout->addWidget(new QLabel(tr("Headers with regexps:")));
@@ -31,10 +33,11 @@ LogLineHeaderParsingParamsEditWidget::LogLineHeaderParsingParamsEditWidget(const
 
     setLayout(centralLayout);
 
-    for (int i = 0; i < params.HeaderGroupRegExps.size(); ++i)
+    for (int i = 0; i < params.HeaderGroupDatas.size(); ++i)
     {
-        gui_paramsTable->setItem(i, 0, new QTableWidgetItem(params.HeaderGroupRegExps.at(i).first));
-        gui_paramsTable->setItem(i, 1, new QTableWidgetItem(params.HeaderGroupRegExps.at(i).second));
+        gui_paramsTable->setItem(i, 0, new QTableWidgetItem(params.HeaderGroupDatas.at(i).Name));
+        gui_paramsTable->setItem(i, 1, new QTableWidgetItem(params.HeaderGroupDatas.at(i).RegExp));
+        gui_paramsTable->setItem(i, 2, new QTableWidgetItem(params.HeaderGroupDatas.at(i).Delimiter));
     }
 
     if (!params.GroupNameForGrouping.isEmpty())
@@ -59,13 +62,16 @@ LogLineHeaderParsingParams LogLineHeaderParsingParamsEditWidget::GetParams() con
     {
         const QString header = gui_paramsTable->item(i, 0)->text();
         const QString regExp = gui_paramsTable->item(i, 1)->text();
+        const QString delimiter =
+                gui_paramsTable->item(i, 2)->text().isEmpty() ?
+                    QString("\\s*") : gui_paramsTable->item(i, 2)->text();
 
         if (header.isEmpty() || regExp.isEmpty())
         {
             continue;
         }
 
-        result.HeaderGroupRegExps.append(QPair<QString, QString>(header, regExp + "\\s*"));
+        result.HeaderGroupDatas.append(LogLineHeaderParsingParams::GroupData({header, regExp, delimiter}));
     }
     result.GroupNameForGrouping = gui_groupingHeaderCombo->currentText();
     result.SortingGroup = gui_sortingHeaderCombo->currentText();

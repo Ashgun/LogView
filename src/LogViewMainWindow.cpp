@@ -38,7 +38,7 @@ public:
         m_groupName(logLineHeaderParsingParams.GroupNameForGrouping)
     {
         QString groupRegExp("");
-        m_lineParser.reset(new RegExpLogLineParser(logLineHeaderParsingParams.HeaderGroupRegExps, groupRegExp));
+        m_lineParser.reset(new RegExpLogLineParser(logLineHeaderParsingParams.HeaderGroupDatas, groupRegExp));
     }
 
     QString GetGroupFromLine(const EventPattern::PatternString& line) const override
@@ -356,7 +356,7 @@ public:
         m_sortingGroupName(logLineHeaderParsingParams.SortingGroup)
     {
         QString groupRegExp("");
-        m_lineParser.reset(new RegExpLogLineParser(logLineHeaderParsingParams.HeaderGroupRegExps, groupRegExp));
+        m_lineParser.reset(new RegExpLogLineParser(logLineHeaderParsingParams.HeaderGroupDatas, groupRegExp));
     }
 
     bool operator()(const QStringList &d1, const QStringList &d2) const

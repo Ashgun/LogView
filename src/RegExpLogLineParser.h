@@ -2,6 +2,7 @@
 #define REGEXPLOGLINEPARSER_H
 
 #include "ILogLineParser.h"
+#include "Events.h"
 
 #include <QVector>
 #include <QRegExp>
@@ -11,7 +12,7 @@ class RegExpLogLineParser : public ILogLineParser
 public:
     RegExpLogLineParser(
             QVector<QPair<QString, QRegExp>> const& headerRegExps, QRegExp const& groupRegExp = QRegExp());
-    RegExpLogLineParser(QVector<QPair<QString, QString>> const& headerRegExpsStrs, QString const& groupRegExpStr = QString());
+    RegExpLogLineParser(QVector<LogLineHeaderParsingParams::GroupData> const& headerRegExpsStrs, QString const& groupRegExpStr = QString());
     ~RegExpLogLineParser() override = default;
 
     LogLineInfo Parse(const QString& line) const override;

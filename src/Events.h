@@ -162,8 +162,16 @@ struct LogLineHeaderParsingParams
 {
     using GroupNameType = QString;
     using GroupRegExpString = QString;
+    using AfterGroupDelimiterType = QString;
 
-    QVector<QPair<GroupNameType, GroupRegExpString>> HeaderGroupRegExps;
+    struct GroupData
+    {
+        GroupNameType Name;
+        GroupRegExpString RegExp;
+        AfterGroupDelimiterType Delimiter;
+    };
+
+    QVector<GroupData> HeaderGroupDatas;
     QString GroupNameForGrouping;
     QString SortingGroup;
 

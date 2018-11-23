@@ -5,15 +5,18 @@
 	[
 		{
 			"GroupName" : "DateTime",
-			"GroupRegExpString" : "\\[([0-9_\\./\\-\\s:]+)\\]\\s*"
+			"GroupRegExpString" : "\\[([0-9_\\./\\-\\s:]+)\\]",
+			"AfterGroupDelimiter" : "\\s*"
 		},
 		{
 			"GroupName" : "LogLevel",
-			"GroupRegExpString" : "\\[([TILDWEF]){1,1}\\]\\s*"
+			"GroupRegExpString" : "\\[([TILDWEF]){1,1}\\]",
+			"AfterGroupDelimiter" : "\\s*"
 		},
 		{
 			"GroupName" : "ThreadId",
-			"GroupRegExpString" : "\\[([x0-9]+)\\]\\s*"
+			"GroupRegExpString" : "\\[([x0-9]+)\\]",
+			"AfterGroupDelimiter" : "\\s*"
 		}
 	]
 }

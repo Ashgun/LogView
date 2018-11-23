@@ -195,10 +195,10 @@ void ILogLineParser_Test()
 {
     QString groupRegExp("");
 //    QString groupRegExp("\\[([0-9A-Za-z:]+)\\]\\s*");
-    QVector<QPair<QString, QString>> headerRegExps;
-    headerRegExps.push_back(QPair<QString, QString>("DateTime", "\\[([0-9_\\./\\-\\s:]+)\\]\\s*"));
-    headerRegExps.push_back(QPair<QString, QString>("LogLevel", "\\[([TILDWEF]){1,1}\\]\\s*"));
-    headerRegExps.push_back(QPair<QString, QString>("ThreadId", "\\[([x0-9]+)\\]\\s*"));
+    QVector<LogLineHeaderParsingParams::GroupData> headerRegExps;
+    headerRegExps.push_back(LogLineHeaderParsingParams::GroupData({"DateTime", "\\[([0-9_\\./\\-\\s:]+)\\]", "\\s*"}));
+    headerRegExps.push_back(LogLineHeaderParsingParams::GroupData({"LogLevel", "\\[([TILDWEF]){1,1}\\]", "\\s*"}));
+    headerRegExps.push_back(LogLineHeaderParsingParams::GroupData({"ThreadId", "\\[([x0-9]+)\\]", "\\s*"}));
 
     std::unique_ptr<ILogLineParser> lineParser(new RegExpLogLineParser(headerRegExps, groupRegExp));
 
@@ -294,7 +294,7 @@ private:
 class EventInfoExtractor : public IEventInfoExtractor
 {
 public:
-    explicit EventInfoExtractor(QVector<QPair<QString, QString>> const& headerRegExps, QString const& groupName) :
+    explicit EventInfoExtractor(QVector<LogLineHeaderParsingParams::GroupData> const& headerRegExps, QString const& groupName) :
         m_groupName(groupName)
     {
         QString groupRegExp("");

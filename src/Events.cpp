@@ -930,7 +930,7 @@ LogLineHeaderParsingParams LogLineHeaderParsingParams::FromJson(const QString& j
     params.GroupNameForGrouping = QString::fromStdString(root["GroupNameForGrouping"].asString());
     params.SortingGroup = QString::fromStdString(root["SortingGroup"].asString());
 
-    params.HeaderGroupRegExps.reserve(static_cast<int>(root["HeaderGroupRegExps"].size()));
+    params.HeaderGroupDatas.reserve(static_cast<int>(root["HeaderGroupRegExps"].size()));
     for (Json::ArrayIndex i = 0; i < root["HeaderGroupRegExps"].size(); ++i)
     {
         const Json::Value headerParsingInfo = root["HeaderGroupRegExps"][i];
@@ -945,10 +945,16 @@ LogLineHeaderParsingParams LogLineHeaderParsingParams::FromJson(const QString& j
             throw std::invalid_argument("Invalid JSON data in LogLineHeaderParsingParams: GroupRegExpString");
         }
 
+        if (headerParsingInfo["AfterGroupDelimiter"].isNull() || headerParsingInfo["AfterGroupDelimiter"].empty())
+        {
+            throw std::invalid_argument("Invalid JSON data in LogLineHeaderParsingParams: AfterGroupDelimiter");
+        }
+
         const LogLineHeaderParsingParams::GroupNameType group = QString::fromStdString(headerParsingInfo["GroupName"].asString());
         const LogLineHeaderParsingParams::GroupRegExpString regExp = QString::fromStdString(headerParsingInfo["GroupRegExpString"].asString());
+        const LogLineHeaderParsingParams::GroupRegExpString delimiter = QString::fromStdString(headerParsingInfo["AfterGroupDelimiter"].asString());
 
-        params.HeaderGroupRegExps.push_back(QPair<QString, QString>(group, regExp));
+        params.HeaderGroupDatas.push_back(LogLineHeaderParsingParams::GroupData({group, regExp, delimiter}));
     }
 
     return params;
@@ -962,11 +968,12 @@ QString LogLineHeaderParsingParams::ToJson(const LogLineHeaderParsingParams& par
     root["SortingGroup"] = params.SortingGroup.toStdString();
 
     Json::Value groupInfoArray(Json::ValueType::arrayValue);
-    for (const auto& groupInfo : params.HeaderGroupRegExps)
+    for (const auto& groupInfo : params.HeaderGroupDatas)
     {
         Json::Value value;
-        value["GroupName"] = groupInfo.first.toStdString();
-        value["GroupRegExpString"] = groupInfo.second.toStdString();
+        value["GroupName"] = groupInfo.Name.toStdString();
+        value["GroupRegExpString"] = groupInfo.RegExp.toStdString();
+        value["AfterGroupDelimiter"] = groupInfo.Delimiter.toStdString();
 
         groupInfoArray.append(value);
     }
