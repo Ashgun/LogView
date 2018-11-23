@@ -59,7 +59,7 @@ private:
     QString const m_groupName;
 };
 
-QStringList LoadFileBlockToStrings(const QString& filename, const quint64 from, const quint64 to,
+QPair<QStringList, QList<int>> LoadFileBlockToStrings(const QString& filename, const quint64 from, const quint64 to,
                                    std::function<bool(const QString& line)> isLineAcceptableFunctor)
 {
     const auto IsEndOfLineSymbol =
@@ -69,6 +69,7 @@ QStringList LoadFileBlockToStrings(const QString& filename, const quint64 from, 
             };
 
     QStringList resultList;
+    QList<int> resultLinesIndexes;
 
     QFile binfile(filename);
 
@@ -82,6 +83,7 @@ QStringList LoadFileBlockToStrings(const QString& filename, const quint64 from, 
             binfile.seek(static_cast<qint64>(from));
         }
 
+        int lineIndex = 0;
         QDataStream in(&binfile);
         quint64 bufferStartOffset = from;
 
@@ -108,7 +110,10 @@ QStringList LoadFileBlockToStrings(const QString& filename, const quint64 from, 
                         if (isLineAcceptableFunctor(line))
                         {
                             resultList.append(line);
+                            resultLinesIndexes.append(lineIndex);
                         }
+
+                        ++lineIndex;
                     }
 
                     previousEol = i;
@@ -126,7 +131,7 @@ QStringList LoadFileBlockToStrings(const QString& filename, const quint64 from, 
         binfile.close();
     }
 
-    return resultList;
+    return QPair<QStringList, QList<int>>(resultList, resultLinesIndexes);
 }
 
 LogLineHeaderParsingParams LoadLogLineHeaderParsingParams()
@@ -163,7 +168,7 @@ LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
 
     gui_selectedEventView = new QTreeWidget();
 //    gui_selectedEventView->setColumnCount(2);
-    gui_selectedEventView->setHeaderLabels(QStringList() << tr("No.") << tr("Log line"));
+    gui_selectedEventView->setHeaderLabels(QStringList() << tr("No.[File No.]") << tr("Log line"));
 //    gui_selectedEventView->setStyleSheet("QTreeWidget { font-family: \"Helvetica\"; font-size: " + QString::number(11) + "pt; }");
 
     setStyleSheet("QSplitter::handle{background-color: black;}");
@@ -277,6 +282,7 @@ QList<QStringList> LoadLinesForEvent(const Event& event, const QStringList& file
     {
         QStringList eventViewData;
         eventViewData
+            << QString::number(event.StartLine.Position.Index + 1)
             << QString::number(event.StartLine.Position.NumberInFile + 1)
             << event.StartLine.Line
             << event.ViewColor.toColorCode();
@@ -288,6 +294,7 @@ QList<QStringList> LoadLinesForEvent(const Event& event, const QStringList& file
         {
             QStringList eventViewData;
             eventViewData
+                << QString::number(event.StartLine.Position.Index + 1)
                 << QString::number(event.StartLine.Position.NumberInFile + 1)
                 << event.StartLine.Line
                 << event.ViewColor.toColorCode();
@@ -301,45 +308,78 @@ QList<QStringList> LoadLinesForEvent(const Event& event, const QStringList& file
                    groupExtractor->GetGroupFromLine(line) == event.Group;
         };
 
-        QStringList lines;
-
         if (event.StartLine.Position.Index == event.EndLine.Position.Index)
         {
-            lines = LoadFileBlockToStrings(
+            QPair<QStringList, QList<int>> lines = LoadFileBlockToStrings(
                                     filenames.at(event.StartLine.Position.Index),
                                     event.StartLine.Position.Offset, event.EndLine.Position.Offset,
                                     isLineAcceptableFunctor);
+
+            for (int i = 1; i < lines.first.size(); ++i)
+            {
+                QStringList eventViewData;
+                eventViewData
+                    << QString::number(event.StartLine.Position.Index + 1)
+                    << QString::number(event.StartLine.Position.NumberInFile + 1)
+                    << lines.first[i];
+                result.append(eventViewData);
+            }
         }
         else
         {
-            lines = LoadFileBlockToStrings(
-                        filenames.at(event.StartLine.Position.Index),
-                        event.StartLine.Position.Offset, 0, isLineAcceptableFunctor);
+            {
+                QPair<QStringList, QList<int>> lines = LoadFileBlockToStrings(
+                                        filenames.at(event.StartLine.Position.Index),
+                                        event.StartLine.Position.Offset, 0, isLineAcceptableFunctor);
+
+                for (int i = 1; i < lines.first.size(); ++i)
+                {
+                    QStringList eventViewData;
+                    eventViewData
+                            << QString::number(event.StartLine.Position.Index + 1)
+                            << QString::number(event.StartLine.Position.NumberInFile + lines.second.at(i) + 1)
+                            << lines.first[i];
+                    result.append(eventViewData);
+                }
+            }
 
             for (FileIndex i = event.StartLine.Position.Index + 1; i < event.EndLine.Position.Index - 1; ++i)
             {
-                lines.append(LoadFileBlockToStrings(filenames.at(i), 0, 0, isLineAcceptableFunctor));
+                QPair<QStringList, QList<int>> lines = LoadFileBlockToStrings(filenames.at(i), 0, 0, isLineAcceptableFunctor);
+
+                for (int j = 0; j < lines.first.size(); ++j)
+                {
+                    QStringList eventViewData;
+                    eventViewData
+                        << QString::number(i + 1)
+                        << QString::number(lines.second.at(j) + 1)
+                        << lines.first[j];
+                    result.append(eventViewData);
+                }
             }
 
-            lines.append(
-                        LoadFileBlockToStrings(
-                            filenames.at(event.EndLine.Position.Index),
-                            0, event.EndLine.Position.Offset,
-                            isLineAcceptableFunctor));
+            {
+                QPair<QStringList, QList<int>> lines = LoadFileBlockToStrings(
+                                        filenames.at(event.EndLine.Position.Index),
+                                        0, event.EndLine.Position.Offset,
+                                        isLineAcceptableFunctor);
+
+                for (int i = 0; i < lines.first.size(); ++i)
+                {
+                    QStringList eventViewData;
+                    eventViewData
+                        << QString::number(event.EndLine.Position.Index + 1)
+                        << QString::number(lines.second.at(i) + 1)
+                        << lines.first[i];
+                    result.append(eventViewData);
+                }
+            }
         }
 
-        for (int i = 1; i < lines.size(); ++i)
         {
             QStringList eventViewData;
             eventViewData
-                << QString::number(event.StartLine.Position.NumberInFile + static_cast<unsigned int>(i) + 1)
-                << lines[i];
-            result.append(eventViewData);
-        }
-
-        {
-            QStringList eventViewData;
-            eventViewData
+                << QString::number(event.EndLine.Position.Index + 1)
                 << QString::number(event.EndLine.Position.NumberInFile + 1)
                 << event.EndLine.Line
                 << event.ViewColor.toColorCode();
@@ -362,7 +402,20 @@ public:
 
     bool operator()(const QStringList &d1, const QStringList &d2) const
     {
-        return GetSortingHeader(d1.at(1)) < GetSortingHeader(d2.at(1));
+        const auto l = GetSortingHeader(d1.at(2));
+        const auto r = GetSortingHeader(d2.at(2));
+
+        if (l == r)
+        {
+            if (d1.at(0).toInt() != d2.at(0).toInt())
+            {
+                return d1.at(0).toInt() < d2.at(0).toInt();
+            }
+
+            return d1.at(1).toInt() < d2.at(1).toInt();
+        }
+
+        return l < r;
     }
 
 private:
@@ -399,11 +452,11 @@ void LogViewMainWindow::slot_EventSelectionChanged()
 
     for (const auto& logLines : eventsLogLines)
     {
-        QTreeWidgetItem* item = new QTreeWidgetItem(QStringList() << logLines[0] << logLines[1]);
+        QTreeWidgetItem* item = new QTreeWidgetItem(QStringList() << logLines[1] + QString("[%1]").arg(logLines[0]) << logLines[2]);
 
-        if (logLines.size() == 3)
+        if (logLines.size() == 4)
         {
-            item->setBackgroundColor(1, IMatchableEventPattern::Color::fromColorCode(logLines[2]).toQColor());
+            item->setBackgroundColor(1, IMatchableEventPattern::Color::fromColorCode(logLines[3]).toQColor());
         }
 
         gui_selectedEventView->addTopLevelItem(item);
