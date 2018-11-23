@@ -29,6 +29,7 @@ public:
 
     void Select();
     void Unselect();
+    bool IsSelected() const;
 
     const Event& GetEvent() const;
 

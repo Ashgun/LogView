@@ -187,8 +187,16 @@ void EventsGraphicsScene::OnEventSelection(EventGraphicsItem* eventGraphicsItem)
         m_selectedEventItems.clear();
     }
 
-    m_selectedEventItems.push_back(eventGraphicsItem);
-    eventGraphicsItem->Select();
+    if (!eventGraphicsItem->IsSelected())
+    {
+        m_selectedEventItems.push_back(eventGraphicsItem);
+        eventGraphicsItem->Select();
+    }
+    else
+    {
+        m_selectedEventItems.removeAll(eventGraphicsItem);
+        eventGraphicsItem->Unselect();
+    }
 
     emit EventSelectionChanged();
 }

@@ -49,6 +49,11 @@ void EventGraphicsItem::Unselect()
     update();
 }
 
+bool EventGraphicsItem::IsSelected() const
+{
+    return m_selected;
+}
+
 const Event&EventGraphicsItem::GetEvent() const
 {
     return m_event;
