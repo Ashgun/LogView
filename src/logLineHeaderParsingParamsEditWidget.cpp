@@ -23,7 +23,7 @@ LogLineHeaderParsingParamsEditWidget::LogLineHeaderParsingParamsEditWidget(const
 
     QStringList headers;
     headers << tr("Header") << tr("RegExp") << tr("Delimiter");
-    gui_paramsTable = new QTableWidget(10, headers.size());
+    gui_paramsTable = new QTableWidget(20, headers.size());
     gui_paramsTable->setHorizontalHeaderLabels(headers);
 
     QVBoxLayout* centralLayout = new QVBoxLayout();
@@ -33,12 +33,32 @@ LogLineHeaderParsingParamsEditWidget::LogLineHeaderParsingParamsEditWidget(const
 
     setLayout(centralLayout);
 
+    connect(gui_paramsTable, SIGNAL(itemChanged(QTableWidgetItem*)),
+            this, SLOT(slot_paramsTable_itemChanged(QTableWidgetItem*)), Qt::DirectConnection);
+
+    SetParams(params);
+}
+
+void LogLineHeaderParsingParamsEditWidget::SetParams(const LogLineHeaderParsingParams& params)
+{
+    gui_paramsTable->blockSignals(true);
+
+    QSet<QString> items;
+
     for (int i = 0; i < params.HeaderGroupDatas.size(); ++i)
     {
         gui_paramsTable->setItem(i, 0, new QTableWidgetItem(params.HeaderGroupDatas.at(i).Name));
         gui_paramsTable->setItem(i, 1, new QTableWidgetItem(params.HeaderGroupDatas.at(i).RegExp));
         gui_paramsTable->setItem(i, 2, new QTableWidgetItem(params.HeaderGroupDatas.at(i).Delimiter));
+
+        items.insert(params.HeaderGroupDatas.at(i).Name);
     }
+
+    gui_groupingHeaderCombo->clear();
+    gui_groupingHeaderCombo->addItems(QStringList(items.toList()));
+
+    gui_sortingHeaderCombo->clear();
+    gui_sortingHeaderCombo->addItems(QStringList(items.toList()));
 
     if (!params.GroupNameForGrouping.isEmpty())
     {
@@ -50,8 +70,7 @@ LogLineHeaderParsingParamsEditWidget::LogLineHeaderParsingParamsEditWidget(const
         gui_sortingHeaderCombo->setCurrentText(params.SortingGroup);
     }
 
-    connect(gui_paramsTable, SIGNAL(itemChanged(QTableWidgetItem*)),
-            this, SLOT(slot_paramsTable_itemChanged(QTableWidgetItem*)), Qt::DirectConnection);
+    gui_paramsTable->blockSignals(false);
 }
 
 LogLineHeaderParsingParams LogLineHeaderParsingParamsEditWidget::GetParams() const
@@ -60,10 +79,16 @@ LogLineHeaderParsingParams LogLineHeaderParsingParamsEditWidget::GetParams() con
 
     for (int i = 0; i < gui_paramsTable->rowCount(); ++i)
     {
+        if (gui_paramsTable->item(i, 0) == nullptr ||
+            gui_paramsTable->item(i, 1) == nullptr)
+        {
+            continue;
+        }
+
         const QString header = gui_paramsTable->item(i, 0)->text();
         const QString regExp = gui_paramsTable->item(i, 1)->text();
         const QString delimiter =
-                gui_paramsTable->item(i, 2)->text().isEmpty() ?
+                (gui_paramsTable->item(i, 2) == nullptr || gui_paramsTable->item(i, 2)->text().isEmpty()) ?
                     QString("\\s*") : gui_paramsTable->item(i, 2)->text();
 
         if (header.isEmpty() || regExp.isEmpty())
@@ -73,6 +98,7 @@ LogLineHeaderParsingParams LogLineHeaderParsingParamsEditWidget::GetParams() con
 
         result.HeaderGroupDatas.append(LogLineHeaderParsingParams::GroupData({header, regExp, delimiter}));
     }
+
     result.GroupNameForGrouping = gui_groupingHeaderCombo->currentText();
     result.SortingGroup = gui_sortingHeaderCombo->currentText();
 
@@ -85,22 +111,32 @@ void LogLineHeaderParsingParamsEditWidget::slot_paramsTable_itemChanged(QTableWi
 
     for (int i = 0; i < gui_paramsTable->rowCount(); ++i)
     {
-        if (gui_paramsTable->item(i, 0) != nullptr)
+        if (gui_paramsTable->item(i, 0) == nullptr)
         {
             continue;
         }
 
         const QString header = gui_paramsTable->item(i, 0)->text();
+
+        if (header.isEmpty())
+        {
+            continue;
+        }
+
         items.insert(header);
     }
 
     gui_groupingHeaderCombo->clear();
     gui_groupingHeaderCombo->addItems(QStringList(items.toList()));
-
-    gui_groupingHeaderCombo->setCurrentText(item->text());
+    if (item != nullptr)
+    {
+        gui_groupingHeaderCombo->setCurrentText(item->text());
+    }
 
     gui_sortingHeaderCombo->clear();
     gui_sortingHeaderCombo->addItems(QStringList(items.toList()));
-
-    gui_sortingHeaderCombo->setCurrentText(item->text());
+    if (item != nullptr)
+    {
+        gui_sortingHeaderCombo->setCurrentText(item->text());
+    }
 }

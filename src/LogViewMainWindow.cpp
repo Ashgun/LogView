@@ -21,6 +21,7 @@
 #include "RegExpLogLineParser.h"
 
 #include "EventPatternsEditDialog.h"
+#include "LogLineHeaderParsingParamsEditDialog.h"
 #include "LogFileWithConfigsOpenDialog.h"
 
 #include "Common.h"
@@ -411,7 +412,7 @@ void LogViewMainWindow::slot_EventSelectionChanged()
 
 void LogViewMainWindow::slot_act_openFileTriggred()
 {
-    LogFileWithConfigsOpenDialog dialog;
+    LogFileWithConfigsOpenDialog dialog(this);
 
     if (dialog.exec() != QDialog::Accepted)
     {
@@ -451,7 +452,13 @@ void LogViewMainWindow::slot_act_copySelectedLinesToClipboard_Triggred()
 
 void LogViewMainWindow::slot_act_editEventPatternsConfig_Triggred()
 {
-    EventPatternsEditDialog window;
+    EventPatternsEditDialog window(this);
+    /*int code = */window.exec();
+}
+
+void LogViewMainWindow::slot_act_editLogLineParsingConfig_Triggred()
+{
+    LogLineHeaderParsingParamsEditDialog window(this);
     /*int code = */window.exec();
 }
 
@@ -465,6 +472,7 @@ void LogViewMainWindow::CreateActions()
     shortcut_copySelectedLinesToClipboard = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_C), this);
 
     act_editEventPatternsConfig = new QAction(tr("Edit event patterns config"));
+    act_editLogLineParsingConfig = new QAction(tr("Edit log line parsing config"));
 }
 
 void LogViewMainWindow::CreateMenuBar()
@@ -479,6 +487,7 @@ void LogViewMainWindow::CreateMenuBar()
 
     QMenu* toolsMenu = new QMenu(tr("&Tools"));
     toolsMenu->addAction(act_editEventPatternsConfig);
+    toolsMenu->addAction(act_editLogLineParsingConfig);
 
     gui_mainMenuBar->addMenu(fileMenu);
     gui_mainMenuBar->addMenu(editMenu);
@@ -503,6 +512,8 @@ void LogViewMainWindow::CreateConnections()
 
     connect(act_editEventPatternsConfig, SIGNAL(triggered()),
             this, SLOT(slot_act_editEventPatternsConfig_Triggred()), Qt::DirectConnection);
+    connect(act_editLogLineParsingConfig, SIGNAL(triggered()),
+            this, SLOT(slot_act_editLogLineParsingConfig_Triggred()), Qt::DirectConnection);
 }
 
 void LogViewMainWindow::Redraw()

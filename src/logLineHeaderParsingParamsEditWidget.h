@@ -14,6 +14,7 @@ public:
     explicit LogLineHeaderParsingParamsEditWidget(QWidget *parent = nullptr);
     LogLineHeaderParsingParamsEditWidget(const LogLineHeaderParsingParams& params, QWidget *parent = nullptr);
 
+    void SetParams(const LogLineHeaderParsingParams& params);
     LogLineHeaderParsingParams GetParams() const;
 
 signals:

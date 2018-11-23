@@ -10,6 +10,7 @@
 #include <QTreeWidgetItem>
 #include <QDialogButtonBox>
 #include <QFileDialog>
+#include <QPushButton>
 
 #include <QDebug>
 
