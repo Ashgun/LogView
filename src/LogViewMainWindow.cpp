@@ -450,6 +450,32 @@ void LogViewMainWindow::slot_EventSelectionChanged()
         AppendEventLogLinesWithSorting(currentEventLogLines, eventsLogLines, LogLineDataComparator(m_logLineHeaderParsingParams));
     }
 
+    if (eventsLogLines.size() > 1)
+    {
+        QList<QStringList> eventsLogLinesTmp;
+        eventsLogLinesTmp.append(eventsLogLines.front());
+
+        for (int i = 1; i < eventsLogLines.size(); ++i)
+        {
+            if (eventsLogLinesTmp.back().at(2) != eventsLogLines.at(i).at(2))
+            {
+                eventsLogLinesTmp.append(eventsLogLines.at(i));
+            }
+            else
+            {
+                const bool prevItemHasColor = (eventsLogLinesTmp.back().size() > 3);
+                const bool currItemHasColor = (eventsLogLines.at(i).size() > 3);
+
+                if (!prevItemHasColor && currItemHasColor)
+                {
+                    eventsLogLinesTmp.back() = eventsLogLines.at(i);
+                }
+            }
+        }
+
+        eventsLogLines = std::move(eventsLogLinesTmp);
+    }
+
     for (const auto& logLines : eventsLogLines)
     {
         QTreeWidgetItem* item = new QTreeWidgetItem(QStringList() << logLines[1] + QString("[%1]").arg(logLines[0]) << logLines[2]);
