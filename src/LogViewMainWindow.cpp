@@ -320,7 +320,7 @@ QList<QStringList> LoadLinesForEvent(const Event& event, const QStringList& file
                 QStringList eventViewData;
                 eventViewData
                     << QString::number(event.StartLine.Position.Index + 1)
-                    << QString::number(event.StartLine.Position.NumberInFile + 1)
+                    << QString::number(event.StartLine.Position.NumberInFile + lines.second.at(i) + 1)
                     << lines.first[i];
                 result.append(eventViewData);
             }
