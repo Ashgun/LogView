@@ -170,6 +170,14 @@ const QList<EventGraphicsItem*>&EventsGraphicsScene::GetSelectedEventItems() con
     return m_selectedEventItems;
 }
 
+void EventsGraphicsScene::Reset()
+{
+    clear();
+
+    m_selectedEventItems.clear();
+    m_eventsToView.clear();
+}
+
 void EventsGraphicsScene::OnEventSelection(EventGraphicsItem* eventGraphicsItem)
 {
     const bool isCtrlPressed = QApplication::keyboardModifiers().testFlag(Qt::ControlModifier);

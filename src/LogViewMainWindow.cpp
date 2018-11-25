@@ -498,8 +498,10 @@ void LogViewMainWindow::slot_act_openFileTriggred()
         return;
     }
 
-    const QString eventsParsingConfigJson = LoadFileToQString(dialog.GetEventPatternConfig());
+    gui_EventsViewScene->Reset();
+    gui_selectedEventView->clear();
 
+    const QString eventsParsingConfigJson = LoadFileToQString(dialog.GetEventPatternConfig());
     LoadLogs(dialog.GetOpenLogFileNames(), eventsParsingConfigJson);
 }
 

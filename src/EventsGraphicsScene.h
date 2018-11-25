@@ -18,6 +18,8 @@ public:
 
     const QList<EventGraphicsItem*>& GetSelectedEventItems() const;
 
+    void Reset();
+
 signals:
     void EventSelectionChanged();
 
