@@ -41,7 +41,7 @@ void AddTreeItemChildrenToHierarchy(
 EventPatternsEditWidget::EventPatternsEditWidget(const EventsTreeEditWidget::PatternAddingPolicy& addingPolicy, QWidget *parent)
     : QWidget(parent)
 {
-    setMinimumSize(800, 800);
+    setMinimumSize(800, 600);
 
     gui_eventsEdit = new EventPatternEditWidget();
 
