@@ -16,7 +16,9 @@ static const QString RecentDataConfig = "RecentData.ini";
 namespace SpecialEventsLevels
 {
 
+static const int BasicEventsLevel = 0;
 static const int GlobalEventsLevel = 100;
+static const int IgnoredEventsLevel = 1000;
 
 } // namespace SpecialEventsLevels
 

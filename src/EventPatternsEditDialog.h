@@ -36,6 +36,7 @@ protected slots:
 private:
     EventPatternsEditWidget* gui_eventsTreeWidget;
     EventPatternsEditWidget* gui_globalEventsTreeWidget;
+    EventPatternsEditWidget* gui_ignoredEventsTreeWidget;
 
     QTabWidget* gui_eventsTreesTab;
 

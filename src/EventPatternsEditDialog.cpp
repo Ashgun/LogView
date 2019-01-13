@@ -21,10 +21,12 @@ EventPatternsEditDialog::EventPatternsEditDialog(QWidget *parent) :
 
     gui_eventsTreeWidget = new EventPatternsEditWidget(EventsTreeEditWidget::PatternAddingPolicy::AddToTree);
     gui_globalEventsTreeWidget = new EventPatternsEditWidget(EventsTreeEditWidget::PatternAddingPolicy::AddToTopLevelOnly);
+    gui_ignoredEventsTreeWidget = new EventPatternsEditWidget(EventsTreeEditWidget::PatternAddingPolicy::AddToTopLevelOnly);
 
     gui_eventsTreesTab = new QTabWidget;
     gui_eventsTreesTab->addTab(gui_eventsTreeWidget, tr("Events to search"));
     gui_eventsTreesTab->addTab(gui_globalEventsTreeWidget, tr("Global events"));
+    gui_eventsTreesTab->addTab(gui_ignoredEventsTreeWidget, tr("Ignored events"));
 
     QDialogButtonBox* buttons = new QDialogButtonBox(Qt::Orientation::Horizontal);
     buttons->addButton(QDialogButtonBox::Open);
@@ -49,6 +51,7 @@ void EventPatternsEditDialog::SetEventPatternsHierarchy(const EventPatternsHiera
 {
     gui_eventsTreeWidget->SetEventPatternsHierarchy(eventPatternsHierarchy.TopLevelNodes);
     gui_globalEventsTreeWidget->SetEventPatternsHierarchy(eventPatternsHierarchy.GlobalUnexpectedEventPatterns);
+    gui_ignoredEventsTreeWidget->SetEventPatternsHierarchy(eventPatternsHierarchy.IgnoredEventPatterns);
 }
 
 EventPatternsHierarchy EventPatternsEditDialog::GetEventPatternsHierarchy() const
@@ -57,6 +60,7 @@ EventPatternsHierarchy EventPatternsEditDialog::GetEventPatternsHierarchy() cons
 
     result.TopLevelNodes = gui_eventsTreeWidget->GetEventPatternsHierarchy();
     result.GlobalUnexpectedEventPatterns = gui_globalEventsTreeWidget->GetEventPatternsHierarchy();
+    result.IgnoredEventPatterns = gui_ignoredEventsTreeWidget->GetEventPatternsHierarchy();
 
     return result;
 }

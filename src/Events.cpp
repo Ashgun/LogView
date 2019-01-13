@@ -122,12 +122,24 @@ int GetLevelInHierarchyImpl(const EventPatternsHierarchyNode& eventsNode, const 
 
 int EventPatternsHierarchyMatcher::GetLevelInHierarchy(const QString& line) const
 {
+    for (std::size_t i = 0; i < EventPatterns.IgnoredEventPatterns.size(); ++i)
+    {
+        int const level = GetLevelInHierarchyImpl(EventPatterns.IgnoredEventPatterns[i], line, 0);
+        if (level >= 0)
+        {
+            // return Constants::SpecialEventsLevels::IgnoredEventsLevel + level;
+
+            // Line should be ignored
+            return -1;
+        }
+    }
+
     for (std::size_t i = 0; i < EventPatterns.TopLevelNodes.size(); ++i)
     {
         int const level = GetLevelInHierarchyImpl(EventPatterns.TopLevelNodes[i], line, 0);
         if (level >= 0)
         {
-            return level;
+            return Constants::SpecialEventsLevels::BasicEventsLevel + level;
         }
     }
 
@@ -164,14 +176,23 @@ IMatchableEventPatternPtr CreateExtendedEventPattern(
 
 void EventPatternsHierarchy::AddEventPattern(IMatchableEventPatternPtr event)
 {
-    TopLevelNodes.push_back(EventPatternsHierarchyNode());
-    TopLevelNodes.back().Event = std::move(event);
+    AddEventToArray(std::move(event), TopLevelNodes);
 }
 
 void EventPatternsHierarchy::AddGlobalUnexpectedEventPattern(IMatchableEventPatternPtr event)
 {
-    GlobalUnexpectedEventPatterns.push_back(EventPatternsHierarchyNode());
-    GlobalUnexpectedEventPatterns.back().Event = std::move(event);
+    AddEventToArray(std::move(event), GlobalUnexpectedEventPatterns);
+}
+
+void EventPatternsHierarchy::AddIgnoredEventPattern(IMatchableEventPatternPtr event)
+{
+    AddEventToArray(std::move(event), IgnoredEventPatterns);
+}
+
+void EventPatternsHierarchy::AddEventToArray(IMatchableEventPatternPtr event, std::vector<EventPatternsHierarchyNode> &array)
+{
+    array.push_back(EventPatternsHierarchyNode());
+    array.back().Event = std::move(event);
 }
 
 namespace
@@ -276,6 +297,22 @@ QString EventPatternsHierarchy::toJson(const EventPatternsHierarchy& patterns)
         groupInfoArray.append(value);
     }
     root["GlobalUnexpectedEventPatternsHierarchyNodes"] = groupInfoArray;
+
+    groupInfoArray = Json::Value(Json::ValueType::arrayValue);
+    for (const auto& node : patterns.IgnoredEventPatterns)
+    {
+        Json::Value value = EventToJson(node.Event.get());
+
+        Json::Value subEvents(Json::ValueType::arrayValue);
+        for (const auto& subEvent : node.SubEvents)
+        {
+            subEvents.append(EventPatternsHierarchyNodeToJson(subEvent));
+        }
+        value["SubEvents"] = subEvents;
+
+        groupInfoArray.append(value);
+    }
+    root["IgnoredEventPatternsHierarchyNodes"] = groupInfoArray;
 
     std::unique_ptr<Json::StreamWriter> writer(Json::StreamWriterBuilder().newStreamWriter());
     std::stringstream ss;
@@ -516,6 +553,23 @@ void EventPatternsHierarchy::fromJson(const QString& jsonData, EventPatternsHier
                 [&patterns]() -> std::vector<EventPatternsHierarchyNode>&
         {
             return patterns.GlobalUnexpectedEventPatterns;
+        };
+        ParsePatternHierarchyNode(eventPatterntAddingFunctor, subEventsArrayGettingFunctor, patternHierarchyNode);
+    }
+
+    patterns.IgnoredEventPatterns.reserve(static_cast<std::size_t>(root["IgnoredEventPatternsHierarchyNodes"].size()));
+    for (Json::ArrayIndex i = 0; i < root["IgnoredEventPatternsHierarchyNodes"].size(); ++i)
+    {
+        const Json::Value patternHierarchyNode = root["IgnoredEventPatternsHierarchyNodes"][i];
+        std::function<void(IMatchableEventPatternPtr event)> eventPatterntAddingFunctor =
+                [&patterns](IMatchableEventPatternPtr event) -> void
+        {
+            patterns.AddIgnoredEventPattern(std::move(event));
+        };
+        std::function<std::vector<EventPatternsHierarchyNode>&()> subEventsArrayGettingFunctor =
+                [&patterns]() -> std::vector<EventPatternsHierarchyNode>&
+        {
+            return patterns.IgnoredEventPatterns;
         };
         ParsePatternHierarchyNode(eventPatterntAddingFunctor, subEventsArrayGettingFunctor, patternHierarchyNode);
     }
