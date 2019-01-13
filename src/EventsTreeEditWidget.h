@@ -14,19 +14,6 @@
 
 class QTreeWidgetItem;
 
-class EventsTreeEditWidget;
-
-class FocusCapturingNotifier
-{
-public:
-    virtual void FocusCapturedBy(const EventsTreeEditWidget* eventsTreeEdit) = 0;
-    virtual void RegisterObserver(EventsTreeEditWidget* eventsTreeEdit) = 0;
-
-    virtual ~FocusCapturingNotifier() = default;
-};
-
-std::unique_ptr<FocusCapturingNotifier> GetFocusCapturingNotifier();
-
 class EventsTreeEditWidget : public QWidget
 {
     Q_OBJECT
@@ -41,7 +28,6 @@ public:
 public:
     explicit EventsTreeEditWidget(
             EventPatternEditWidget* eventsEdit,
-            FocusCapturingNotifier* focusCapturingNotifier,
             const PatternAddingPolicy patternAddingPolicy,
             QWidget *parent = nullptr);
 
@@ -55,9 +41,6 @@ public:
     QTreeWidgetItem* TopLevelItem(const int index);
 
     void AcceptState();
-
-    void CaptureFocus();
-    void LooseFocus();
 
 private:
     void UpdateItemByEventPatternEdit(QTreeWidgetItem* item);
@@ -74,7 +57,6 @@ public slots:
 
 private:
     EventsTreeWidget* gui_eventsTree;
-    FocusCapturingNotifier* m_focusCapturingNotifier;
     const PatternAddingPolicy m_patternAddingPolicy;
 
     EventPatternEditWidget* gui_eventsEdit;

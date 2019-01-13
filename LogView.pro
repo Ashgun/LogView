@@ -48,7 +48,8 @@ SOURCES += src/main.cpp \
     src/LogFileWithConfigsOpenDialog.cpp \
     src/Utils.cpp \
     src/EventsTreeEditWidget.cpp \
-    src/LogLineHeaderParsingParamsEditDialog.cpp
+    src/LogLineHeaderParsingParamsEditDialog.cpp \
+    src/EventPatternsEditWidget.cpp
 
 HEADERS += \
     src/ILogLineParser.h \
@@ -85,4 +86,5 @@ HEADERS += \
     src/LogFileWithConfigsOpenDialog.h \
     src/Utils.h \
     src/EventsTreeEditWidget.h \
-    src/LogLineHeaderParsingParamsEditDialog.h
+    src/LogLineHeaderParsingParamsEditDialog.h \
+    src/EventPatternsEditWidget.h

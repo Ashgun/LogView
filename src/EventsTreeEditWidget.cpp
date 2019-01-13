@@ -22,11 +22,9 @@ IMatchableEventPatternPtr CreateDefaultEventPattern(const QString& eventPatternN
 
 EventsTreeEditWidget::EventsTreeEditWidget(
         EventPatternEditWidget* eventsEdit,
-        FocusCapturingNotifier* focusCapturingNotifier,
         const PatternAddingPolicy patternAddingPolicy,
         QWidget *parent) :
     QWidget(parent),
-    m_focusCapturingNotifier(focusCapturingNotifier),
     m_patternAddingPolicy(patternAddingPolicy),
     gui_eventsEdit(eventsEdit)
 {
@@ -114,7 +112,6 @@ void EventsTreeEditWidget::slot_eventsTree_clicked()
     QTreeWidgetItem *current = gui_eventsTree->currentItem();
     if (current != nullptr)
     {
-        CaptureFocus();
         UpdateEventPatternEditIfPossible(current);
     }
 }
@@ -129,8 +126,6 @@ void EventsTreeEditWidget::slot_eventsTree_currentItemChanged(QTreeWidgetItem* c
         }
     }
 
-    CaptureFocus();
-
     UpdateEventPatternEditIfPossible(current);
 
     emit ItemChanged(this);
@@ -138,8 +133,6 @@ void EventsTreeEditWidget::slot_eventsTree_currentItemChanged(QTreeWidgetItem* c
 
 void EventsTreeEditWidget::slot_addEventPatternButton_clicked(bool)
 {
-    CaptureFocus();
-
     const QString baseEventPatternName = "New event pattern";
     IMatchableEventPatternPtr eventPattern = CreateDefaultEventPattern(baseEventPatternName);
 
@@ -171,28 +164,8 @@ void EventsTreeEditWidget::AcceptState()
     }
 }
 
-void EventsTreeEditWidget::CaptureFocus()
-{
-    m_focusCapturingNotifier->FocusCapturedBy(this);
-    m_FocusLost = false;
-    m_savedOnFocusLoose = false;
-}
-
-void EventsTreeEditWidget::LooseFocus()
-{
-    if (!m_FocusLost && !m_savedOnFocusLoose)
-    {
-        AcceptState();
-        m_savedOnFocusLoose = true;
-    }
-
-    m_FocusLost = true;
-}
-
 void EventsTreeEditWidget::slot_deleteEventPatternButton_clicked(bool)
 {
-    CaptureFocus();
-
     auto currentItem = gui_eventsTree->currentItem();
 
     if (currentItem == nullptr)
@@ -202,35 +175,4 @@ void EventsTreeEditWidget::slot_deleteEventPatternButton_clicked(bool)
 
     m_mapTreeItemsToEventPatterns.erase(currentItem);
     delete currentItem;
-}
-
-class FocusCapturingNotifierImpl : public FocusCapturingNotifier
-{
-public:
-    FocusCapturingNotifierImpl() = default;
-    ~FocusCapturingNotifierImpl() override = default;
-
-    void FocusCapturedBy(const EventsTreeEditWidget* eventsTreeEdit) override
-    {
-        for (EventsTreeEditWidget* savedEventsTreeEdit : m_eventsTreeEdits)
-        {
-            if (savedEventsTreeEdit != eventsTreeEdit)
-            {
-                savedEventsTreeEdit->LooseFocus();
-            }
-        }
-    }
-
-    void RegisterObserver(EventsTreeEditWidget* eventsTreeEdit) override
-    {
-        m_eventsTreeEdits.push_back(eventsTreeEdit);
-    }
-
-private:
-    std::vector<EventsTreeEditWidget*> m_eventsTreeEdits;
-};
-
-std::unique_ptr<FocusCapturingNotifier> GetFocusCapturingNotifier()
-{
-    return std::make_unique<FocusCapturingNotifierImpl>();
 }

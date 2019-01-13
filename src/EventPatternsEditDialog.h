@@ -3,9 +3,9 @@
 
 #include <QWidget>
 #include <QDialog>
+#include <QTabWidget>
 
-#include "EventPatternEditWidget.h"
-#include "EventsTreeEditWidget.h"
+#include "EventPatternsEditWidget.h"
 
 #include "Events.h"
 
@@ -33,17 +33,11 @@ protected slots:
     void slot_open();
     void slot_save();
 
-    void slot_ItemChanged(EventsTreeEditWidget* treeEditWidget);
-
 private:
-    EventPatternEditWidget* gui_eventsEdit;
+    EventPatternsEditWidget* gui_eventsTreeWidget;
+    EventPatternsEditWidget* gui_globalEventsTreeWidget;
 
-    std::unique_ptr<FocusCapturingNotifier> m_FocusCapturingNotifier = GetFocusCapturingNotifier();
-
-    EventsTreeEditWidget* gui_eventsTree;
-    EventsTreeEditWidget* gui_globalEventsTree;
-
-    EventsTreeEditWidget* m_currentEventsTree;
+    QTabWidget* gui_eventsTreesTab;
 
     QString m_openedFileName;
 };
