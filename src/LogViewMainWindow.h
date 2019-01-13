@@ -33,9 +33,12 @@ signals:
 protected slots:
     void slot_EventSelectionChanged();
     void slot_act_openFileTriggred();
+    void slot_act_closeFileTriggred();
     void slot_act_copySelectedLinesToClipboard_Triggred();
     void slot_act_editEventPatternsConfig_Triggred();
     void slot_act_editLogLineParsingConfig_Triggred();
+
+    void slot_act_closeAppTriggred();
 
     void resizeEvent(QResizeEvent* event) override;
 
@@ -48,6 +51,8 @@ private:
     void UpdateViewportParams();
     void Invalidate();
 
+    void CloseFile();
+
 private:
     QMenuBar* gui_mainMenuBar;
     QGraphicsView* gui_EventsView;
@@ -55,7 +60,10 @@ private:
 
     QTreeWidget* gui_selectedEventView;
 
+    QAction* act_exit;
+
     QAction* act_openFile;
+    QAction* act_closeFile;
     QAction* act_copySelectedLinesToClipboard;
     QShortcut* shortcut_copySelectedLinesToClipboard;
     QAction* act_editEventPatternsConfig;

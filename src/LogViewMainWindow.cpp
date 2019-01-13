@@ -498,17 +498,27 @@ void LogViewMainWindow::slot_act_openFileTriggred()
         return;
     }
 
-    gui_EventsViewScene->Reset();
-    gui_selectedEventView->clear();
+    CloseFile();
 
     const QString eventsParsingConfigJson = LoadFileToQString(dialog.GetEventPatternConfig());
     LoadLogs(dialog.GetOpenLogFileNames(), eventsParsingConfigJson);
+}
+
+void LogViewMainWindow::slot_act_closeFileTriggred()
+{
+    CloseFile();
 }
 
 void LogViewMainWindow::Invalidate()
 {
     UpdateViewportParams();
     Redraw();
+}
+
+void LogViewMainWindow::CloseFile()
+{
+    gui_EventsViewScene->Reset();
+    gui_selectedEventView->clear();
 }
 
 void LogViewMainWindow::resizeEvent(QResizeEvent* /*event*/)
@@ -543,9 +553,23 @@ void LogViewMainWindow::slot_act_editLogLineParsingConfig_Triggred()
     /*int code = */window.exec();
 }
 
+void LogViewMainWindow::slot_act_closeAppTriggred()
+{
+    CloseFile();
+
+    close();
+}
+
 void LogViewMainWindow::CreateActions()
 {
     act_openFile = new QAction(tr("&Open log file"));
+    act_openFile->setShortcut(QKeySequence("Ctrl+O"));
+
+    act_exit = new QAction(tr("&Exit"));
+//    act_exit->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_F4));
+
+    act_closeFile = new QAction(tr("&Close file"));
+    act_closeFile->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_F4));
 
     act_copySelectedLinesToClipboard = new QAction(tr("Copy Selected data to clipboard"));
     // Disabled because of conflicting with shortcut
@@ -562,6 +586,9 @@ void LogViewMainWindow::CreateMenuBar()
 
     QMenu* fileMenu = new QMenu(tr("&File"));
     fileMenu->addAction(act_openFile);
+    fileMenu->addAction(act_closeFile);
+    fileMenu->addSeparator();
+    fileMenu->addAction(act_exit);
 
     QMenu* editMenu = new QMenu(tr("&Edit"));
     editMenu->addAction(act_copySelectedLinesToClipboard);
@@ -585,6 +612,10 @@ void LogViewMainWindow::CreateConnections()
 
     connect(act_openFile, SIGNAL(triggered()),
             this, SLOT(slot_act_openFileTriggred()), Qt::DirectConnection);
+    connect(act_closeFile, SIGNAL(triggered()),
+            this, SLOT(slot_act_closeFileTriggred()), Qt::DirectConnection);
+    connect(act_exit, SIGNAL(triggered()),
+            this, SLOT(slot_act_closeAppTriggred()), Qt::DirectConnection);
 
     connect(act_copySelectedLinesToClipboard, SIGNAL(triggered()),
             this, SLOT(slot_act_copySelectedLinesToClipboard_Triggred()), Qt::DirectConnection);
