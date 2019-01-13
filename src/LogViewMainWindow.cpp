@@ -160,10 +160,8 @@ LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
     qRegisterMetaType<Event>("Event");
     setMinimumSize(1024, 768);
 
-    gui_EventsViewScene = new EventsGraphicsScene(this);
-
-    gui_EventsView = new EventsGraphicsView();
-    gui_EventsView->setScene(gui_EventsViewScene);
+    gui_EventsViewScene = nullptr;
+    gui_EventsView = nullptr;
 
     gui_selectedEventView = new QTreeWidget();
 //    gui_selectedEventView->setColumnCount(2);
@@ -174,15 +172,13 @@ LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
     QSplitter* verticalSplitter = new QSplitter(Qt::Orientation::Vertical);
     verticalSplitter->setHandleWidth(3);
 
-    QWidget* viewWidget = new QWidget();
+    gui_viewsWidget = new QWidget();
     {
         QHBoxLayout* viewLayout = new QHBoxLayout();
-        viewLayout->addWidget(gui_EventsView);
-
-        viewWidget->setLayout(viewLayout);
+        gui_viewsWidget->setLayout(viewLayout);
     }
 
-    verticalSplitter->addWidget(viewWidget);
+    verticalSplitter->addWidget(gui_viewsWidget);
 
     QWidget* selectedViewWidget = new QWidget();
     {
@@ -202,6 +198,18 @@ LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
 //    verticalSplitter->setSizes(sizes);
     verticalSplitter->setStretchFactor(0, 5);
     verticalSplitter->setStretchFactor(1, 1);
+
+    {
+        gui_EventsViewScene = new EventsGraphicsScene();
+
+        gui_EventsView = new EventsGraphicsView();
+        gui_EventsView->setScene(gui_EventsViewScene);
+
+        gui_viewsWidget->layout()->addWidget(gui_EventsView);
+        gui_viewsWidget->setLayout(gui_viewsWidget->layout());
+
+        CloseFile();
+    }
 
 
     CreateActions();
@@ -261,11 +269,21 @@ void LogViewMainWindow::UpdateViewportParams()
 {
     if (m_linesStorage == nullptr)
     {
+        if (gui_EventsViewScene != nullptr &&
+            gui_EventsView != nullptr)
+        {
+            gui_EventsViewScene->UpdateViewportParams(0, gui_EventsView->width());
+        }
+
         return;
     }
 
-    std::size_t linesCount = m_linesStorage->Size();
-    gui_EventsViewScene->UpdateViewportParams(linesCount, gui_EventsView->width());
+    if (gui_EventsViewScene != nullptr &&
+        gui_EventsView != nullptr)
+    {
+        std::size_t linesCount = m_linesStorage->Size();
+        gui_EventsViewScene->UpdateViewportParams(linesCount, gui_EventsView->width());
+    }
 }
 
 void LogViewMainWindow::LoadLogView()
@@ -498,6 +516,7 @@ void LogViewMainWindow::slot_act_openFileTriggred()
     }
 
     CloseFile();
+    AddView();
 
     const QString eventsParsingConfigJson = LoadFileToQString(dialog.GetEventPatternConfig());
     LoadLogs(dialog.GetOpenLogFileNames(), eventsParsingConfigJson);
@@ -516,8 +535,42 @@ void LogViewMainWindow::Invalidate()
 
 void LogViewMainWindow::CloseFile()
 {
+    if (gui_EventsViewScene == nullptr ||
+        gui_EventsView == nullptr)
+    {
+        return;
+    }
+
     gui_EventsViewScene->Reset();
     gui_selectedEventView->clear();
+
+    disconnect(gui_EventsViewScene, SIGNAL(EventSelectionChanged()),
+               this, SLOT(slot_EventSelectionChanged()));
+
+    gui_EventsViewScene->deleteLater();
+    gui_EventsView->deleteLater();
+
+    gui_EventsViewScene = nullptr;
+    gui_EventsView = nullptr;
+}
+
+void LogViewMainWindow::AddView()
+{
+    gui_EventsViewScene = new EventsGraphicsScene();
+
+    gui_EventsView = new EventsGraphicsView();
+    gui_EventsView->setScene(gui_EventsViewScene);
+
+    gui_viewsWidget->layout()->addWidget(gui_EventsView);
+    gui_viewsWidget->setLayout(gui_viewsWidget->layout());
+
+    gui_EventsView->resize(gui_viewsWidget->width() - 25, gui_EventsView->height());
+
+    connect(gui_EventsViewScene, SIGNAL(EventSelectionChanged()),
+            this, SLOT(slot_EventSelectionChanged()),
+            Qt::QueuedConnection);
+
+    Invalidate();
 }
 
 void LogViewMainWindow::resizeEvent(QResizeEvent* /*event*/)
@@ -605,10 +658,6 @@ void LogViewMainWindow::CreateMenuBar()
 
 void LogViewMainWindow::CreateConnections()
 {
-    connect(gui_EventsViewScene, SIGNAL(EventSelectionChanged()),
-            this, SLOT(slot_EventSelectionChanged()),
-            Qt::QueuedConnection);
-
     connect(act_openFile, SIGNAL(triggered()),
             this, SLOT(slot_act_openFileTriggred()), Qt::DirectConnection);
     connect(act_closeFile, SIGNAL(triggered()),
@@ -629,6 +678,12 @@ void LogViewMainWindow::CreateConnections()
 
 void LogViewMainWindow::Redraw()
 {
+    if (gui_EventsViewScene == nullptr ||
+        gui_EventsView == nullptr)
+    {
+        return;
+    }
+
     gui_EventsViewScene->DrawEventItems(m_eventLevels);
 
     gui_EventsView->horizontalScrollBar()->setValue(gui_EventsView->horizontalScrollBar()->minimum());

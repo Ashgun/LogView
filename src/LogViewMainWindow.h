@@ -54,8 +54,12 @@ private:
 
     void CloseFile();
 
+    void AddView();
+
 private:
     QMenuBar* gui_mainMenuBar;
+    QWidget* gui_viewsWidget;
+
     EventsGraphicsView* gui_EventsView;
     EventsGraphicsScene* gui_EventsViewScene;
 
