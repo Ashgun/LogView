@@ -162,8 +162,7 @@ LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
 
     gui_EventsViewScene = new EventsGraphicsScene(this);
 
-    gui_EventsView = new QGraphicsView();
-    gui_EventsView->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+    gui_EventsView = new EventsGraphicsView();
     gui_EventsView->setScene(gui_EventsViewScene);
 
     gui_selectedEventView = new QTreeWidget();

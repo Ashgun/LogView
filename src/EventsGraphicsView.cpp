@@ -1,11 +1,11 @@
-#include "CustomView.h"
+#include "EventsGraphicsView.h"
 
 #include <QMouseEvent>
 #include <QGraphicsScene>
 
 #include <QtDebug>
 
-CustomView::CustomView()
+EventsGraphicsView::EventsGraphicsView()
 {
     setAlignment(Qt::AlignLeft | Qt::AlignTop);
 
@@ -13,12 +13,4 @@ CustomView::CustomView()
 //    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 //    setAlignment(Qt::AlignCenter);
 //    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-}
-
-void CustomView::mousePressEvent(QMouseEvent* event)
-{
-    auto point = mapToScene(event->pos());
-
-    qDebug() << "Custom view clicked:" << scene()->items(point).size();
-    QGraphicsView::mousePressEvent(event);
 }

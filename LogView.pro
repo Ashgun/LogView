@@ -32,7 +32,7 @@ SOURCES += src/main.cpp \
     src/Events.cpp \
     src/PositionedLine.cpp \
     src/LogViewMainWindow.cpp \
-    src/CustomView.cpp \
+    src/EventsGraphicsView.cpp \
     src/CustomItem.cpp \
     src/EventGraphicsItem.cpp \
     src/EventsGraphicsScene.cpp \
@@ -69,7 +69,7 @@ HEADERS += \
     src/Events.h \
     src/PositionedLine.h \
     src/LogViewMainWindow.h \
-    src/CustomView.h \
+    src/EventsGraphicsView.h \
     src/CustomItem.h \
     src/EventGraphicsItem.h \
     src/EventsGraphicsScene.h \

@@ -10,6 +10,7 @@
 #include <QShortcut>
 
 #include "EventsGraphicsScene.h"
+#include "EventsGraphicsView.h"
 
 #include <vector>
 
@@ -55,7 +56,7 @@ private:
 
 private:
     QMenuBar* gui_mainMenuBar;
-    QGraphicsView* gui_EventsView;
+    EventsGraphicsView* gui_EventsView;
     EventsGraphicsScene* gui_EventsViewScene;
 
     QTreeWidget* gui_selectedEventView;
