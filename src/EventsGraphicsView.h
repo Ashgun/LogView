@@ -5,9 +5,17 @@
 
 class EventsGraphicsView : public QGraphicsView
 {
-//    Q_OBJECT
+    Q_OBJECT
 public:
-    EventsGraphicsView();
+    explicit EventsGraphicsView(QWidget* parent = nullptr);
+
+    void ScrollTo(const int value);
+
+private slots:
+    void slot_verticalScroll_valueChanged(int value);
+
+signals:
+    void ViewScrolledTo(int);
 };
 
 #endif // EVENTSGRAPHICSVIEW_H
