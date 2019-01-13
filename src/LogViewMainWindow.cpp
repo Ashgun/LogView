@@ -212,11 +212,10 @@ LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
 
 LogViewMainWindow::~LogViewMainWindow() = default;
 
-void LogViewMainWindow::LoadLogs(
-        const QStringList& filenames,
+void LogViewMainWindow::LoadLogs(const QStringList& filenames, const int fileGroupsCount,
         const QString& eventsParsingConfigJson)
 {
-    AddView();
+    AddView(fileGroupsCount);
 
     m_loadedFiles.push_back(filenames);
     std::sort(m_loadedFiles.back().begin(), m_loadedFiles.back().end(),
@@ -545,7 +544,11 @@ void LogViewMainWindow::slot_act_openFileTriggred()
 
     const QString eventsParsingConfigJson = LoadFileToQString(dialog.GetEventPatternConfig());
 
-    LoadLogs(dialog.GetOpenLogFileNames(), eventsParsingConfigJson);
+    const int fileGroupsCount = 1;
+    for (int i = 0; i < fileGroupsCount; ++i)
+    {
+        LoadLogs(dialog.GetOpenLogFileNames(), fileGroupsCount, eventsParsingConfigJson);
+    }
 }
 
 void LogViewMainWindow::slot_act_closeFileTriggred()
@@ -595,7 +598,7 @@ void LogViewMainWindow::CloseFiles()
     m_loadedFiles.clear();
 }
 
-void LogViewMainWindow::AddView()
+void LogViewMainWindow::AddView(const int fileGroupsCount)
 {
     EventsGraphicsScene* eventsViewScene = new EventsGraphicsScene();
 
@@ -608,7 +611,7 @@ void LogViewMainWindow::AddView()
     gui_viewsWidget->layout()->addWidget(eventsGraphicsView);
     gui_viewsWidget->setLayout(gui_viewsWidget->layout());
 
-    eventsGraphicsView->resize(gui_viewsWidget->width() - 25, eventsGraphicsView->height());
+    eventsGraphicsView->resize(gui_viewsWidget->width() / fileGroupsCount - 25, eventsGraphicsView->height());
 
     connect(eventsViewScene, SIGNAL(EventSelectionChanged()),
             this, SLOT(slot_EventSelectionChanged()),

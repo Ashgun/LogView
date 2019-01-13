@@ -26,7 +26,7 @@ public:
     explicit LogViewMainWindow(QWidget *parent = nullptr);
     ~LogViewMainWindow() override;
 
-    void LoadLogs(const QStringList& filenames, const QString& eventsParsingConfigJson);
+    void LoadLogs(const QStringList& filenames, const int fileGroupsCount, const QString& eventsParsingConfigJson);
     void LoadLogView();
 
 signals:
@@ -55,7 +55,7 @@ private:
 
     void CloseFiles();
 
-    void AddView();
+    void AddView(const int fileGroupsCount);
 
 private:
     QMenuBar* gui_mainMenuBar;
