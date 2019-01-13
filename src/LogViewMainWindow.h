@@ -33,6 +33,7 @@ signals:
 
 protected slots:
     void slot_EventSelectionChanged();
+    void slot_ViewScrolledTo(int value);
     void slot_act_openFileTriggred();
     void slot_act_closeFileTriggred();
     void slot_act_copySelectedLinesToClipboard_Triggred();
@@ -52,7 +53,7 @@ private:
     void UpdateViewportParams();
     void Invalidate();
 
-    void CloseFile();
+    void CloseFiles();
 
     void AddView();
 
@@ -60,8 +61,8 @@ private:
     QMenuBar* gui_mainMenuBar;
     QWidget* gui_viewsWidget;
 
-    EventsGraphicsView* gui_EventsView;
-    EventsGraphicsScene* gui_EventsViewScene;
+    std::vector<EventsGraphicsView*> gui_EventsViews;
+    std::vector<EventsGraphicsScene*> gui_EventsViewScenes;
 
     QTreeWidget* gui_selectedEventView;
 
@@ -74,10 +75,10 @@ private:
     QAction* act_editEventPatternsConfig;
     QAction* act_editLogLineParsingConfig;
 
-    std::unique_ptr<IPositionedLinesStorage> m_linesStorage;
-    std::vector<std::vector<Event>> m_eventLevels;
+    std::vector<std::unique_ptr<IPositionedLinesStorage>> m_linesStorages;
+    std::vector<std::vector<std::vector<Event>>> m_eventLevels;
 
-    QStringList m_loadedFiles;
+    std::vector<QStringList> m_loadedFiles;
 
     std::unique_ptr<IEventInfoExtractor> m_infoExtractor;
 

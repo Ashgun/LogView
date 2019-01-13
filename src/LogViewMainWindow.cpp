@@ -160,9 +160,6 @@ LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
     qRegisterMetaType<Event>("Event");
     setMinimumSize(1024, 768);
 
-    gui_EventsViewScene = nullptr;
-    gui_EventsView = nullptr;
-
     gui_selectedEventView = new QTreeWidget();
 //    gui_selectedEventView->setColumnCount(2);
     gui_selectedEventView->setHeaderLabels(QStringList() << tr("No.[File No.]") << tr("Log line"));
@@ -199,19 +196,6 @@ LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
     verticalSplitter->setStretchFactor(0, 5);
     verticalSplitter->setStretchFactor(1, 1);
 
-    {
-        gui_EventsViewScene = new EventsGraphicsScene();
-
-        gui_EventsView = new EventsGraphicsView();
-        gui_EventsView->setScene(gui_EventsViewScene);
-
-        gui_viewsWidget->layout()->addWidget(gui_EventsView);
-        gui_viewsWidget->setLayout(gui_viewsWidget->layout());
-
-        CloseFile();
-    }
-
-
     CreateActions();
     CreateMenuBar();
     CreateConnections();
@@ -223,15 +207,17 @@ void LogViewMainWindow::LoadLogs(
         const QStringList& filenames,
         const QString& eventsParsingConfigJson)
 {
-    m_loadedFiles = filenames;
-    std::sort(m_loadedFiles.begin(), m_loadedFiles.end(),
+    AddView();
+
+    m_loadedFiles.push_back(filenames);
+    std::sort(m_loadedFiles.back().begin(), m_loadedFiles.back().end(),
             [](const QString& l, const QString& r) -> bool
             {
                 return QFileInfo(l).lastModified() < QFileInfo(r).lastModified();
             });
 
     BaseLinePositionStorage linePositionStorage;
-    m_linesStorage = std::make_unique<BasePositionedLinesStorage>();
+    m_linesStorages.push_back(std::move(std::make_unique<BasePositionedLinesStorage>()));
 
     EventPatternsHierarchyMatcher lineSelector;
     EventPatternsHierarchy::fromJson(eventsParsingConfigJson, lineSelector.EventPatterns);
@@ -252,37 +238,43 @@ void LogViewMainWindow::LoadLogs(
         }
     }
 
-    FilesIndexer indexer(linePositionStorage, *m_linesStorage, lineSelector);
-    for (const auto& filename : m_loadedFiles)
+    FilesIndexer indexer(linePositionStorage, *m_linesStorages.back(), lineSelector);
+    for (const auto& filename : m_loadedFiles.back())
     {
         indexer.AddFileIndexes(filename);
     }
 
     m_infoExtractor = std::make_unique<EventInfoExtractor>(m_logLineHeaderParsingParams);
 
-    m_eventLevels = FindEvents(lineSelector.EventPatterns, *m_linesStorage, *m_infoExtractor);
+    m_eventLevels.push_back(FindEvents(lineSelector.EventPatterns, *m_linesStorages.back(), *m_infoExtractor));
 
     Invalidate();
 }
 
 void LogViewMainWindow::UpdateViewportParams()
 {
-    if (m_linesStorage == nullptr)
+    if (m_linesStorages.empty())
     {
-        if (gui_EventsViewScene != nullptr &&
-            gui_EventsView != nullptr)
+        if (!gui_EventsViewScenes.empty() &&
+            !gui_EventsViews.empty())
         {
-            gui_EventsViewScene->UpdateViewportParams(0, gui_EventsView->width());
+            for (std::size_t i = 0; i < gui_EventsViewScenes.size(); ++i)
+            {
+                gui_EventsViewScenes[i]->UpdateViewportParams(0, gui_EventsViews[i]->width());
+            }
         }
 
         return;
     }
 
-    if (gui_EventsViewScene != nullptr &&
-        gui_EventsView != nullptr)
+    if (!gui_EventsViewScenes.empty() &&
+        !gui_EventsViews.empty())
     {
-        std::size_t linesCount = m_linesStorage->Size();
-        gui_EventsViewScene->UpdateViewportParams(linesCount, gui_EventsView->width());
+        for (std::size_t i = 0; i < gui_EventsViewScenes.size(); ++i)
+        {
+            std::size_t linesCount = (m_linesStorages.size() <= i ? 0 : m_linesStorages[i]->Size());
+            gui_EventsViewScenes[i]->UpdateViewportParams(linesCount, gui_EventsViews[i]->width());
+        }
     }
 }
 
@@ -461,10 +453,16 @@ void LogViewMainWindow::slot_EventSelectionChanged()
     gui_selectedEventView->clear();
 
     QList<QStringList> eventsLogLines;
-    for (const auto& currentEventItem : gui_EventsViewScene->GetSelectedEventItems())
+
+    for (std::size_t i = 0; i < gui_EventsViewScenes.size(); ++i)
     {
-        QList<QStringList> currentEventLogLines = LoadLinesForEvent(currentEventItem->GetEvent(), m_loadedFiles, m_infoExtractor.get());
-        AppendEventLogLinesWithSorting(currentEventLogLines, eventsLogLines, LogLineDataComparator(m_logLineHeaderParsingParams));
+        const auto& gui_EventsViewScene = gui_EventsViewScenes[i];
+
+        for (const auto& currentEventItem : gui_EventsViewScene->GetSelectedEventItems())
+        {
+            QList<QStringList> currentEventLogLines = LoadLinesForEvent(currentEventItem->GetEvent(), m_loadedFiles[i], m_infoExtractor.get());
+            AppendEventLogLinesWithSorting(currentEventLogLines, eventsLogLines, LogLineDataComparator(m_logLineHeaderParsingParams));
+        }
     }
 
     if (eventsLogLines.size() > 1)
@@ -506,6 +504,14 @@ void LogViewMainWindow::slot_EventSelectionChanged()
     }
 }
 
+void LogViewMainWindow::slot_ViewScrolledTo(int value)
+{
+    for (std::size_t i = 0; i < gui_EventsViews.size(); ++i)
+    {
+        gui_EventsViews[i]->ScrollTo(value);
+    }
+}
+
 void LogViewMainWindow::slot_act_openFileTriggred()
 {
     LogFileWithConfigsOpenDialog dialog(this);
@@ -515,16 +521,16 @@ void LogViewMainWindow::slot_act_openFileTriggred()
         return;
     }
 
-    CloseFile();
-    AddView();
+    CloseFiles();
 
     const QString eventsParsingConfigJson = LoadFileToQString(dialog.GetEventPatternConfig());
+
     LoadLogs(dialog.GetOpenLogFileNames(), eventsParsingConfigJson);
 }
 
 void LogViewMainWindow::slot_act_closeFileTriggred()
 {
-    CloseFile();
+    CloseFiles();
 }
 
 void LogViewMainWindow::Invalidate()
@@ -533,41 +539,63 @@ void LogViewMainWindow::Invalidate()
     Redraw();
 }
 
-void LogViewMainWindow::CloseFile()
+void LogViewMainWindow::CloseFiles()
 {
-    if (gui_EventsViewScene == nullptr ||
-        gui_EventsView == nullptr)
-    {
-        return;
-    }
-
-    gui_EventsViewScene->Reset();
     gui_selectedEventView->clear();
 
-    disconnect(gui_EventsViewScene, SIGNAL(EventSelectionChanged()),
-               this, SLOT(slot_EventSelectionChanged()));
+    for (std::size_t i = 0; i < gui_EventsViews.size(); ++i)
+    {
+        EventsGraphicsScene* gui_EventsViewScene = gui_EventsViewScenes[i];
+        EventsGraphicsView* gui_EventsView = gui_EventsViews[i];
 
-    gui_EventsViewScene->deleteLater();
-    gui_EventsView->deleteLater();
+        if (gui_EventsViewScene == nullptr ||
+            gui_EventsView == nullptr)
+        {
+            return;
+        }
 
-    gui_EventsViewScene = nullptr;
-    gui_EventsView = nullptr;
+        gui_EventsViewScene->Reset();
+
+        disconnect(gui_EventsViewScene, SIGNAL(EventSelectionChanged()),
+                   this, SLOT(slot_EventSelectionChanged()));
+        disconnect(gui_EventsView, SIGNAL(ViewScrolledTo(int)),
+                   this, SLOT(slot_ViewScrolledTo(int)));
+
+        gui_EventsViewScene->deleteLater();
+        gui_EventsView->deleteLater();
+
+        gui_EventsView->hide();
+    }
+
+    gui_EventsViewScenes.clear();
+    gui_EventsViews.clear();
+
+    m_linesStorages.clear();
+    m_eventLevels.clear();
+    m_loadedFiles.clear();
 }
 
 void LogViewMainWindow::AddView()
 {
-    gui_EventsViewScene = new EventsGraphicsScene();
+    EventsGraphicsScene* eventsViewScene = new EventsGraphicsScene();
 
-    gui_EventsView = new EventsGraphicsView();
-    gui_EventsView->setScene(gui_EventsViewScene);
+    EventsGraphicsView* eventsGraphicsView = new EventsGraphicsView();
+    eventsGraphicsView->setScene(eventsViewScene);
 
-    gui_viewsWidget->layout()->addWidget(gui_EventsView);
+    gui_EventsViews.push_back(eventsGraphicsView);
+    gui_EventsViewScenes.push_back(eventsViewScene);
+
+    gui_viewsWidget->layout()->addWidget(eventsGraphicsView);
     gui_viewsWidget->setLayout(gui_viewsWidget->layout());
 
-    gui_EventsView->resize(gui_viewsWidget->width() - 25, gui_EventsView->height());
+    eventsGraphicsView->resize(gui_viewsWidget->width() - 25, eventsGraphicsView->height());
 
-    connect(gui_EventsViewScene, SIGNAL(EventSelectionChanged()),
+    connect(eventsViewScene, SIGNAL(EventSelectionChanged()),
             this, SLOT(slot_EventSelectionChanged()),
+            Qt::QueuedConnection);
+
+    connect(eventsGraphicsView, SIGNAL(ViewScrolledTo(int)),
+            this, SLOT(slot_ViewScrolledTo(int)),
             Qt::QueuedConnection);
 
     Invalidate();
@@ -607,7 +635,7 @@ void LogViewMainWindow::slot_act_editLogLineParsingConfig_Triggred()
 
 void LogViewMainWindow::slot_act_closeAppTriggred()
 {
-    CloseFile();
+    CloseFiles();
 
     close();
 }
@@ -678,15 +706,18 @@ void LogViewMainWindow::CreateConnections()
 
 void LogViewMainWindow::Redraw()
 {
-    if (gui_EventsViewScene == nullptr ||
-        gui_EventsView == nullptr)
+    if (gui_EventsViewScenes.empty() ||
+        gui_EventsViews.empty())
     {
         return;
     }
 
-    gui_EventsViewScene->DrawEventItems(m_eventLevels);
+    for (std::size_t i = 0; i < m_eventLevels.size(); ++i)
+    {
+        gui_EventsViewScenes[i]->DrawEventItems(m_eventLevels[i]);
 
-    gui_EventsView->horizontalScrollBar()->setValue(gui_EventsView->horizontalScrollBar()->minimum());
-    gui_EventsView->verticalScrollBar()->setValue(gui_EventsView->verticalScrollBar()->minimum());
-    gui_EventsView->centerOn(0, 0);
+        gui_EventsViews[i]->horizontalScrollBar()->setValue(gui_EventsViews[i]->horizontalScrollBar()->minimum());
+        gui_EventsViews[i]->verticalScrollBar()->setValue(gui_EventsViews[i]->verticalScrollBar()->minimum());
+        gui_EventsViews[i]->centerOn(0, 0);
+    }
 }
