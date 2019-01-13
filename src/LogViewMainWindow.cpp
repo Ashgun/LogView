@@ -217,7 +217,7 @@ void LogViewMainWindow::LoadLogs(
             });
 
     BaseLinePositionStorage linePositionStorage;
-    m_linesStorages.push_back(std::move(std::make_unique<BasePositionedLinesStorage>()));
+    m_linesStorages.push_back(std::make_unique<BasePositionedLinesStorage>());
 
     EventPatternsHierarchyMatcher lineSelector;
     EventPatternsHierarchy::fromJson(eventsParsingConfigJson, lineSelector.EventPatterns);
