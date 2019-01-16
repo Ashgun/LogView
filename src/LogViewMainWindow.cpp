@@ -661,6 +661,23 @@ void LogViewMainWindow::slot_act_openFileTriggred()
         ++globalIndex;
     }
 
+    for (std::size_t eventGroup = 0; eventGroup < m_eventLevels.size(); ++eventGroup)
+    {
+        for (std::size_t eventLevel = 0; eventLevel < m_eventLevels[eventGroup].size(); ++eventLevel)
+        {
+            for (std::size_t eventIndex = 0; eventIndex < m_eventLevels[eventGroup][eventLevel].size(); ++eventIndex)
+            {
+                const LineNumber startLineIndex = m_eventLevels[eventGroup][eventLevel][eventIndex].StartLine.Position.NumberInMatchedLines;
+                const LineNumber endLineIndex = m_eventLevels[eventGroup][eventLevel][eventIndex].EndLine.Position.NumberInMatchedLines;
+
+                m_eventLevels[eventGroup][eventLevel][eventIndex].StartLine.Position.GlobalLineNumber =
+                        (*m_linesStorages[eventGroup])[startLineIndex].Position.GlobalLineNumber;
+                m_eventLevels[eventGroup][eventLevel][eventIndex].EndLine.Position.GlobalLineNumber =
+                        (*m_linesStorages[eventGroup])[endLineIndex].Position.GlobalLineNumber;
+            }
+        }
+    }
+
     Invalidate();
 }
 
