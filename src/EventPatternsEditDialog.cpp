@@ -69,6 +69,7 @@ void EventPatternsEditDialog::AcceptState()
 {
     gui_eventsTreeWidget->AcceptState();
     gui_globalEventsTreeWidget->AcceptState();
+    gui_ignoredEventsTreeWidget->AcceptState();
 }
 
 void EventPatternsEditDialog::slot_accepted()
