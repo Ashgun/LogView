@@ -158,7 +158,6 @@ struct Event
     IMatchableEventPattern::Color ViewColor;
 
     Event() = default;
-    bool operator==(Event const& other) const;
 };
 
 Event CreateEventFromPattern(IMatchableEventPattern const& pattern);
@@ -230,7 +229,7 @@ struct EventHierarchyInfo
     std::size_t EventIndexInHierarchyLevel;
 };
 
-using EventHierarchyInfoForLines = QVector<EventHierarchyInfo>;
+using EventHierarchyInfoForLines = std::vector<EventHierarchyInfo>;
 
 EventHierarchyInfoForLines GetHierarchyInfoForLines(IPositionedLinesStorage const& positionedLinesStorage,
                                              std::vector<std::vector<Event>> const& eventLevels);

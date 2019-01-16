@@ -20,7 +20,6 @@ public:
 public:
     LinePosition();
     LinePosition(FileOffset fileOffset, FileIndex fileId, LineNumber numberInMatchedLines, LineNumber numberInFile, const bool matched = false);
-    bool operator==(LinePosition const& other) const;
 };
 
 #endif // LINEPOSITION_H

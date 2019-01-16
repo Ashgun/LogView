@@ -865,16 +865,6 @@ int CheckEventsOrder(const Event& l, const Event& r)
     return 1;
 }
 
-bool Event::operator==(const Event& other) const
-{
-    return
-        Type == other.Type &&
-        Name == other.Name &&
-        Group == other.Group &&
-        StartLine == other.StartLine &&
-        EndLine == other.EndLine;
-}
-
 bool operator<(const Event& lhs, const Event& rhs)
 {
     return CheckEventsOrder(lhs, rhs) < 0;

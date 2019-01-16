@@ -13,6 +13,5 @@ struct PositionedLine
     PositionedLine(EventPattern::PatternString const& line, LinePosition const& position, int const levelInHierarchy);
     explicit PositionedLine(PositionedLine const& other);
     bool IsEmpty() const;
-    PositionedLine& operator=(PositionedLine const& other);
-    bool operator==(PositionedLine const& other) const;
+    PositionedLine& operator=(PositionedLine const& other);;
 };

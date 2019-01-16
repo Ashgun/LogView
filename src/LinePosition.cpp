@@ -13,12 +13,3 @@ LinePosition::LinePosition(FileOffset fileOffset, FileIndex fileId, LineNumber n
     Matched(matched)
 {
 }
-
-bool LinePosition::operator==(const LinePosition& other) const
-{
-    return
-            Offset == other.Offset &&
-            Index == other.Index &&
-            NumberInMatchedLines == other.NumberInMatchedLines &&
-            NumberInFile == other.NumberInFile;
-}
