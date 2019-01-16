@@ -133,6 +133,8 @@ void EventsTreeEditWidget::slot_eventsTree_currentItemChanged(QTreeWidgetItem* c
 
 void EventsTreeEditWidget::slot_addEventPatternButton_clicked(bool)
 {
+    AcceptState();
+
     const QString baseEventPatternName = "New event pattern";
     IMatchableEventPatternPtr eventPattern = CreateDefaultEventPattern(baseEventPatternName);
 
