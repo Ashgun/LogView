@@ -20,6 +20,9 @@ public:
     const PositionedLine&operator [](const std::size_t index) const override;
     PositionedLine&operator [](const std::size_t index) override;
 
+    PositionedLine& Back() override;
+    const PositionedLine& Back() const override;
+
     std::unique_ptr<IPositionedLinesStorage> Clone() const override;
 
 private:

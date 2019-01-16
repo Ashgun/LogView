@@ -160,6 +160,93 @@ struct LineForEventData
     std::size_t FilesGroupIndex = 0;
 };
 
+class LogLineDataComparator
+{
+public:
+    explicit LogLineDataComparator(LogLineHeaderParsingParams const& logLineHeaderParsingParams) :
+        m_sortingGroupName(logLineHeaderParsingParams.SortingGroup)
+    {
+        QString groupRegExp("");
+        m_lineParser.reset(new RegExpLogLineParser(logLineHeaderParsingParams.HeaderGroupDatas, groupRegExp));
+    }
+
+    bool operator()(const LineForEventData &d1, const LineForEventData &d2) const
+    {
+        const auto l = GetSortingHeader(d1.Line);
+        const auto r = GetSortingHeader(d2.Line);
+
+        if (l == r)
+        {
+            if (d1.PositionIndex.toInt() != d2.PositionIndex.toInt())
+            {
+                return d1.PositionIndex.toInt() < d2.PositionIndex.toInt();
+            }
+
+            if (d1.PositionNumberInFile.toInt() != d2.PositionNumberInFile.toInt())
+            {
+                return d1.PositionNumberInFile.toInt() < d2.PositionNumberInFile.toInt();
+            }
+
+            return d1.FilesGroupIndex < d2.FilesGroupIndex;
+        }
+
+        return l == r;
+    }
+
+private:
+    QString GetSortingHeader(const QString& line) const
+    {
+        const LogLineInfo lineInfo = m_lineParser->Parse(line);
+        return lineInfo.HeaderItems[m_sortingGroupName];
+    }
+
+private:
+    std::shared_ptr<ILogLineParser> m_lineParser;
+    QString const m_sortingGroupName;
+};
+
+class LogLineComparator
+{
+public:
+    explicit LogLineComparator(LogLineHeaderParsingParams const& logLineHeaderParsingParams) :
+        m_sortingGroupName(logLineHeaderParsingParams.SortingGroup)
+    {
+        QString groupRegExp("");
+        m_lineParser.reset(new RegExpLogLineParser(logLineHeaderParsingParams.HeaderGroupDatas, groupRegExp));
+    }
+
+    bool Equals(const EventPattern::PatternString& l, const EventPattern::PatternString& r) const
+    {
+        const auto hl = GetSortingHeader(l);
+        const auto hr = GetSortingHeader(r);
+
+        bool a = (hl == hr);
+
+        return hl == hr;
+    }
+
+    bool Less(const EventPattern::PatternString& l, const EventPattern::PatternString& r) const
+    {
+        const auto hl = GetSortingHeader(l);
+        const auto hr = GetSortingHeader(r);
+
+        bool a = (hl < hr);
+
+        return hl < hr;
+    }
+
+private:
+    QString GetSortingHeader(const QString& line) const
+    {
+        const LogLineInfo lineInfo = m_lineParser->Parse(line);
+        return lineInfo.HeaderItems[m_sortingGroupName];
+    }
+
+private:
+    std::shared_ptr<ILogLineParser> m_lineParser;
+    QString const m_sortingGroupName;
+};
+
 } // namespace
 
 LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
@@ -255,8 +342,6 @@ void LogViewMainWindow::LoadLogs(const QStringList& filenames, const int fileGro
     m_infoExtractor = std::make_unique<EventInfoExtractor>(m_logLineHeaderParsingParams);
 
     m_eventLevels.push_back(FindEvents(lineSelector.EventPatterns, *m_linesStorages.back(), *m_infoExtractor));
-
-    Invalidate();
 }
 
 void LogViewMainWindow::UpdateViewportParams()
@@ -278,10 +363,22 @@ void LogViewMainWindow::UpdateViewportParams()
     if (!gui_EventsViewScenes.empty() &&
         !gui_EventsViews.empty())
     {
+        LineNumber maxLinesCount = 0;
         for (std::size_t i = 0; i < gui_EventsViewScenes.size(); ++i)
         {
-            std::size_t linesCount = (m_linesStorages.size() <= i ? 0 : m_linesStorages[i]->Size());
-            gui_EventsViewScenes[i]->UpdateViewportParams(linesCount, gui_EventsViews[i]->width());
+            const LineNumber lastLineGlobalIndex =
+                    (m_linesStorages.size() <= i || m_linesStorages[i]->Size() == 0 ?
+                         0 : m_linesStorages[i]->Back().Position.GlobalLineNumber);
+            if (lastLineGlobalIndex > maxLinesCount)
+            {
+                maxLinesCount = lastLineGlobalIndex;
+            }
+        }
+
+        for (std::size_t i = 0; i < gui_EventsViewScenes.size(); ++i)
+        {
+            gui_EventsViewScenes[i]->UpdateViewportParams(
+                        static_cast<std::size_t>(maxLinesCount), gui_EventsViews[i]->width());
         }
     }
 }
@@ -399,51 +496,6 @@ QList<LineForEventData> LoadLinesForEvent(const Event& event, const QStringList&
     return result;
 }
 
-class LogLineDataComparator
-{
-public:
-    explicit LogLineDataComparator(LogLineHeaderParsingParams const& logLineHeaderParsingParams) :
-        m_sortingGroupName(logLineHeaderParsingParams.SortingGroup)
-    {
-        QString groupRegExp("");
-        m_lineParser.reset(new RegExpLogLineParser(logLineHeaderParsingParams.HeaderGroupDatas, groupRegExp));
-    }
-
-    bool operator()(const LineForEventData &d1, const LineForEventData &d2) const
-    {
-        const auto l = GetSortingHeader(d1.Line);
-        const auto r = GetSortingHeader(d2.Line);
-
-        if (l == r)
-        {
-            if (d1.PositionIndex.toInt() != d2.PositionIndex.toInt())
-            {
-                return d1.PositionIndex.toInt() < d2.PositionIndex.toInt();
-            }
-
-            if (d1.PositionNumberInFile.toInt() != d2.PositionNumberInFile.toInt())
-            {
-                return d1.PositionNumberInFile.toInt() < d2.PositionNumberInFile.toInt();
-            }
-
-            return d1.FilesGroupIndex < d2.FilesGroupIndex;
-        }
-
-        return l < r;
-    }
-
-private:
-    QString GetSortingHeader(const QString& line) const
-    {
-        const LogLineInfo lineInfo = m_lineParser->Parse(line);
-        return lineInfo.HeaderItems[m_sortingGroupName];
-    }
-
-private:
-    std::shared_ptr<ILogLineParser> m_lineParser;
-    QString const m_sortingGroupName;
-};
-
 void AppendEventLogLinesWithSorting(
         const QList<LineForEventData>& currentEventLogLines,
         QList<LineForEventData>& allEventsLogLines,
@@ -544,11 +596,72 @@ void LogViewMainWindow::slot_act_openFileTriggred()
 
     const QString eventsParsingConfigJson = LoadFileToQString(dialog.GetEventPatternConfig());
 
-    const int fileGroupsCount = 1;
-    for (int i = 0; i < fileGroupsCount; ++i)
+    QVector<QStringList> fileLists;
+//    fileLists.append(QStringList() << "f:\\Work\\_Projects\\build-LogView-Desktop_Qt_5_11_0_MinGW_32bit-Debug\\log0_backup.log");
+//    fileLists.append(QStringList() << "f:\\Work\\_Projects\\build-LogView-Desktop_Qt_5_11_0_MinGW_32bit-Debug\\log0_info.log");
+
+    fileLists.append(dialog.GetOpenLogFileNames());
+
+    for (int i = 0; i < fileLists.size(); ++i)
     {
-        LoadLogs(dialog.GetOpenLogFileNames(), fileGroupsCount, eventsParsingConfigJson);
+        LoadLogs(fileLists[i], fileLists.size(), eventsParsingConfigJson);
     }
+
+    LineNumber maxLinesCount = 0;
+    for (std::size_t i = 0; i < gui_EventsViewScenes.size(); ++i)
+    {
+        const LineNumber lastLineGlobalIndex =
+                (m_linesStorages.size() <= i || m_linesStorages[i]->Size() == 0 ?
+                     0 : m_linesStorages[i]->Back().Position.GlobalLineNumber);
+        if (lastLineGlobalIndex > maxLinesCount)
+        {
+            maxLinesCount = lastLineGlobalIndex;
+        }
+    }
+
+    std::vector<std::size_t> currentPositions(m_linesStorages.size(), 0);
+    LogLineComparator logLineComparator(m_logLineHeaderParsingParams);
+    LineNumber globalIndex = 0;
+    for (LineNumber ind = 0; ind < maxLinesCount; ++ind)
+    {
+        QString minLine = "";
+
+        std::vector<std::size_t> availableGroups;
+        for (std::size_t i = 0; i < m_linesStorages.size(); ++i)
+        {
+            if (currentPositions[i] < m_linesStorages[i]->Size())
+            {
+                availableGroups.push_back(i);
+            }
+        }
+
+        if (availableGroups.empty())
+        {
+            break;
+        }
+
+        minLine = (*m_linesStorages[availableGroups[0]])[currentPositions[availableGroups[0]]].Line;
+        for (std::size_t i = 1; i < availableGroups.size(); ++i)
+        {
+            if (logLineComparator.Less((*m_linesStorages[availableGroups[i]])[currentPositions[availableGroups[i]]].Line, minLine))
+            {
+                minLine = (*m_linesStorages[availableGroups[i]])[currentPositions[availableGroups[i]]].Line;
+            }
+        }
+
+        for (std::size_t i = 0; i < availableGroups.size(); ++i)
+        {
+            if (logLineComparator.Equals(minLine, (*m_linesStorages[availableGroups[i]])[currentPositions[availableGroups[i]]].Line))
+            {
+                (*m_linesStorages[availableGroups[i]])[currentPositions[availableGroups[i]]].Position.GlobalLineNumber = globalIndex;
+                ++currentPositions[availableGroups[i]];
+            }
+        }
+
+        ++globalIndex;
+    }
+
+    Invalidate();
 }
 
 void LogViewMainWindow::slot_act_closeFileTriggred()

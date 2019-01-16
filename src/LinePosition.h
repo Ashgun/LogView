@@ -15,6 +15,7 @@ public:
     FileIndex Index;
     LineNumber NumberInFile;
     LineNumber NumberInMatchedLines;
+    LineNumber GlobalLineNumber;
     bool Matched;
 
 public:

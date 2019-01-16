@@ -286,6 +286,16 @@ public:
         return std::make_unique<SplittedPositionedLinesStorage>(m_decoratee, m_indexes);
     }
 
+    PositionedLine& Back() override
+    {
+        return m_decoratee.Back();
+    }
+
+    const PositionedLine& Back() const override
+    {
+        return m_decoratee.Back();
+    }
+
 private:
     IPositionedLinesStorage& m_decoratee;
     SplittedIndexes const& m_indexes;

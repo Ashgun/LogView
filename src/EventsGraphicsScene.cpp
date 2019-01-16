@@ -8,7 +8,7 @@ namespace ViewParams
 {
 
 const int BaseVerticalSkip = 15;
-const int BaseEventHeight = 15;
+const int BaseEventHeight = 10;
 
 const int VerticalSpace = 3;
 
@@ -104,10 +104,10 @@ std::list<EventGraphicsItem*> GenerateEventViewItems(
         {
             const std::size_t groupIndex = eventGroupIndexes[level][i];
 
-            const qreal y = eventLevels[level][i].StartLine.Position.NumberInMatchedLines * ViewParams::BaseEventHeight + ViewParams::BaseVerticalSkip;
+            const qreal y = eventLevels[level][i].StartLine.Position.GlobalLineNumber * ViewParams::BaseEventHeight + ViewParams::BaseVerticalSkip;
             const qreal height =
-                    (eventLevels[level][i].EndLine.Position.NumberInMatchedLines -
-                     eventLevels[level][i].StartLine.Position.NumberInMatchedLines) * ViewParams::BaseEventHeight +
+                    (eventLevels[level][i].EndLine.Position.GlobalLineNumber -
+                     eventLevels[level][i].StartLine.Position.GlobalLineNumber) * ViewParams::BaseEventHeight +
                     ViewParams::BaseEventHeight - ViewParams::VerticalSpace;
 
             const qreal groupViewWidth = viewSceneWidth / overlappedGroupsCountForLevel[level];

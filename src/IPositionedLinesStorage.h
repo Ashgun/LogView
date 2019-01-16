@@ -19,6 +19,9 @@ public:
     virtual PositionedLine const& operator[](std::size_t const index) const = 0;
     virtual PositionedLine& operator[](std::size_t const index) = 0;
 
+    virtual PositionedLine& Back() = 0;
+    virtual const PositionedLine& Back() const = 0;
+
     virtual std::unique_ptr<IPositionedLinesStorage> Clone() const = 0;
 
     virtual ~IPositionedLinesStorage() = default;

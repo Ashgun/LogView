@@ -10,6 +10,7 @@ LinePosition::LinePosition(FileOffset fileOffset, FileIndex fileId, LineNumber n
     Index(fileId),
     NumberInFile(numberInFile),
     NumberInMatchedLines(numberInMatchedLines),
+    GlobalLineNumber(NumberInMatchedLines),
     Matched(matched)
 {
 }
