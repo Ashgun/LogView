@@ -8,11 +8,11 @@ namespace ViewParams
 {
 
 const int BaseVerticalSkip = 15;
-const int BaseEventHeight = 10;
+const int BaseEventHeight = 15;
 
 const int VerticalSpace = 3;
 
-const int BaseHorizontalSkip = 7;
+const int BaseHorizontalSkip = 12;
 
 } // namespace ViewParams
 

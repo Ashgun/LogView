@@ -6,7 +6,7 @@
 namespace ItemViewParams
 {
 
-const int xSpace = 5;
+const int xSpace = 13;
 const int ySpace = 7;
 
 } // namespace ItemViewParams
