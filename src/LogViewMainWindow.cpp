@@ -220,8 +220,6 @@ public:
         const auto hl = GetSortingHeader(l);
         const auto hr = GetSortingHeader(r);
 
-        bool a = (hl == hr);
-
         return hl == hr;
     }
 
@@ -229,8 +227,6 @@ public:
     {
         const auto hl = GetSortingHeader(l);
         const auto hr = GetSortingHeader(r);
-
-        bool a = (hl < hr);
 
         return hl < hr;
     }
