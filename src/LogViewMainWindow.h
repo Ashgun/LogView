@@ -34,6 +34,7 @@ signals:
 protected slots:
     void slot_EventSelectionChanged();
     void slot_ViewScrolledTo(int value);
+    void slot_LineViewed(int hPos);
     void slot_act_openFileTriggred();
     void slot_act_closeFileTriggred();
     void slot_act_copySelectedLinesToClipboard_Triggred();

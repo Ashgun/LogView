@@ -579,6 +579,14 @@ void LogViewMainWindow::slot_ViewScrolledTo(int value)
     }
 }
 
+void LogViewMainWindow::slot_LineViewed(int hPos)
+{
+    for (std::size_t i = 0; i < gui_EventsViews.size(); ++i)
+    {
+        gui_EventsViews[i]->ShowReferenceLine(hPos);
+    }
+}
+
 void LogViewMainWindow::slot_act_openFileTriggred()
 {
     LogFileWithConfigsOpenDialog dialog(this);
@@ -593,6 +601,8 @@ void LogViewMainWindow::slot_act_openFileTriggred()
     const QString eventsParsingConfigJson = LoadFileToQString(dialog.GetEventPatternConfig());
 
     QVector<QStringList> fileLists;
+//    fileLists.append(QStringList() << "log0_backup.log");
+//    fileLists.append(QStringList() << "log0_info.log");
 //    fileLists.append(QStringList() << "f:\\Work\\_Projects\\build-LogView-Desktop_Qt_5_11_0_MinGW_32bit-Debug\\log0_backup.log");
 //    fileLists.append(QStringList() << "f:\\Work\\_Projects\\build-LogView-Desktop_Qt_5_11_0_MinGW_32bit-Debug\\log0_info.log");
 
@@ -709,6 +719,8 @@ void LogViewMainWindow::CloseFiles()
                    this, SLOT(slot_EventSelectionChanged()));
         disconnect(gui_EventsView, SIGNAL(ViewScrolledTo(int)),
                    this, SLOT(slot_ViewScrolledTo(int)));
+        disconnect(gui_EventsView, SIGNAL(LineViewed(int)),
+                this, SLOT(slot_LineViewed(int)));
 
         gui_EventsViewScene->deleteLater();
         gui_EventsView->deleteLater();
@@ -745,6 +757,10 @@ void LogViewMainWindow::AddView(const int fileGroupsCount)
 
     connect(eventsGraphicsView, SIGNAL(ViewScrolledTo(int)),
             this, SLOT(slot_ViewScrolledTo(int)),
+            Qt::QueuedConnection);
+
+    connect(eventsGraphicsView, SIGNAL(LineViewed(int)),
+            this, SLOT(slot_LineViewed(int)),
             Qt::QueuedConnection);
 
     Invalidate();
