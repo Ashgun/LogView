@@ -190,7 +190,7 @@ public:
             return d1.FilesGroupIndex < d2.FilesGroupIndex;
         }
 
-        return l == r;
+        return l < r;
     }
 
 private:
