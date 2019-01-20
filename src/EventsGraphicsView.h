@@ -19,6 +19,9 @@ private slots:
 
     void mouseMoveEvent(QMouseEvent* event) override;
 
+private:
+    void ClearLine();
+
 signals:
     void ViewScrolledTo(int);
     void LineViewed(int);

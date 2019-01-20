@@ -33,15 +33,7 @@ void EventsGraphicsView::ScrollTo(const int value)
 
 void EventsGraphicsView::ShowReferenceLine(const int verticalPos)
 {
-    if (!gui_viewedLines.isEmpty())
-    {
-        for (QGraphicsLineItem* item : gui_viewedLines)
-        {
-            delete item;
-        }
-
-        gui_viewedLines.clear();
-    }
+    ClearLine();
 
     gui_viewedLines.push_back(scene()->addLine(0, verticalPos, width(), verticalPos, QPen(QBrush(Qt::darkMagenta), 3)));
     gui_viewedLines.back()->setZValue(1000);
@@ -57,9 +49,22 @@ void EventsGraphicsView::slot_verticalScroll_valueChanged(int value)
 
 void EventsGraphicsView::mouseMoveEvent(QMouseEvent *event)
 {
-    const int verticalPos = event->pos().y();
+    const int verticalPos = event->pos().y() + verticalScrollBar()->value();
 
     ShowReferenceLine(verticalPos);
 
     emit LineViewed(verticalPos);
+}
+
+void EventsGraphicsView::ClearLine()
+{
+    if (!gui_viewedLines.isEmpty())
+    {
+        for (QGraphicsLineItem* item : gui_viewedLines)
+        {
+            delete item;
+        }
+
+        gui_viewedLines.clear();
+    }
 }
