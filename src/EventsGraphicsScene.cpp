@@ -75,6 +75,24 @@ std::list<EventGraphicsItem*> GenerateEventViewItems(
                     ++index;
                 }
             }
+
+            for (std::size_t i = 0; i < eventLevels[level].size(); ++i)
+            {
+                for (std::size_t j = 0; j < eventLevels[level].size(); ++j)
+                {
+                    if (i == j ||
+                        eventLevels[level][i].Type == EventType::Single)
+                    {
+                        continue;
+                    }
+
+                    if (eventLevels[level][i].Group == eventLevels[level][j].Group &&
+                        EventContainsOther(eventLevels[level][i], eventLevels[level][j]))
+                    {
+                        eventGroupIndexes[level][j] = eventGroupIndexes[level][i];
+                    }
+                }
+            }
         }
 
         for (std::size_t level = 2; level < eventLevels.size(); ++level)

@@ -841,6 +841,13 @@ bool IsPositionedLineBetweenTwoOthers(PositionedLine const& checkedLine, Positio
 
 } // namespace
 
+bool EventContainsOther(const Event& container, const Event& contained)
+{
+    return
+        IsPositionedLineBetweenTwoOthers(contained.StartLine, container.StartLine, container.EndLine) &&
+        IsPositionedLineBetweenTwoOthers(contained.EndLine, container.StartLine, container.EndLine);
+}
+
 bool IsEventsOverlapped(const Event& l, const Event& r)
 {
     return

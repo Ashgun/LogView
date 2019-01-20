@@ -201,6 +201,7 @@ std::vector<std::vector<Event>> FindEvents(EventPatternsHierarchy const& pattern
                                            IEventInfoExtractor const& eventInfoExtractor);
 
 
+bool EventContainsOther(Event const& container, Event const& contained);
 bool IsEventsOverlapped(Event const& l, Event const& r);
 
 // < 0 -- the first event is earlier than the second one
