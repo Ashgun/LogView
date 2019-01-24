@@ -600,11 +600,6 @@ void LogViewMainWindow::slot_act_openFileTriggred()
     QVector<QStringList> fileLists;
     fileLists.append(dialog.GetOpenLogFileNames());
 
-//    fileLists.append(QStringList() << "log0_backup.log");
-//    fileLists.append(QStringList() << "log0_info.log");
-//    fileLists.append(QStringList() << "f:\\Work\\_Projects\\build-LogView-Desktop_Qt_5_11_0_MinGW_32bit-Debug\\log0_backup.log");
-//    fileLists.append(QStringList() << "f:\\Work\\_Projects\\build-LogView-Desktop_Qt_5_11_0_MinGW_32bit-Debug\\log0_info.log");
-
     OpenFiles(fileLists, QStringList() << dialog.GetEventPatternConfig());
 }
 
