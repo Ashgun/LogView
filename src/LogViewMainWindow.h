@@ -36,6 +36,7 @@ protected slots:
     void slot_ViewScrolledTo(int value);
     void slot_LineViewed(int hPos);
     void slot_act_openFileTriggred();
+    void slot_act_openMultipleFilesTriggred();
     void slot_act_closeFileTriggred();
     void slot_act_copySelectedLinesToClipboard_Triggred();
     void slot_act_editEventPatternsConfig_Triggred();
@@ -54,9 +55,11 @@ private:
     void UpdateViewportParams();
     void Invalidate();
 
+    void OpenFiles(const QVector<QStringList>& fileLists, const QStringList& configFiles);
     void CloseFiles();
 
     void AddView(const int fileGroupsCount);
+
 
 private:
     QMenuBar* gui_mainMenuBar;
@@ -70,6 +73,7 @@ private:
     QAction* act_exit;
 
     QAction* act_openFile;
+    QAction* act_openMultipleFiles;
     QAction* act_closeFile;
     QAction* act_copySelectedLinesToClipboard;
     QShortcut* shortcut_copySelectedLinesToClipboard;

@@ -29,7 +29,7 @@ int LogFileWithConfigsOpenDialog::exec()
         return QDialog::Rejected;
     }
 
-    m_LogFileName = selectedFiles();
+    m_LogFileNames = selectedFiles();
     m_EventPatternConfig = gui_RecentEventPatternConfigWidget->GetSelectedFile();
 
     return QDialog::Accepted;
@@ -37,7 +37,7 @@ int LogFileWithConfigsOpenDialog::exec()
 
 QStringList LogFileWithConfigsOpenDialog::GetOpenLogFileNames()
 {
-    return m_LogFileName;
+    return m_LogFileNames;
 }
 
 QString LogFileWithConfigsOpenDialog::GetEventPatternConfig()

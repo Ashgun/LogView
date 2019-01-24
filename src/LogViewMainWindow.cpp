@@ -23,6 +23,7 @@
 #include "EventPatternsEditDialog.h"
 #include "LogLineHeaderParsingParamsEditDialog.h"
 #include "LogFileWithConfigsOpenDialog.h"
+#include "LogFilesSelectionDialog.h"
 
 #include "Common.h"
 #include "Utils.h"
@@ -596,21 +597,58 @@ void LogViewMainWindow::slot_act_openFileTriggred()
         return;
     }
 
-    CloseFiles();
-
-    const QString eventsParsingConfigJson = LoadFileToQString(dialog.GetEventPatternConfig());
-
     QVector<QStringList> fileLists;
+    fileLists.append(dialog.GetOpenLogFileNames());
+
 //    fileLists.append(QStringList() << "log0_backup.log");
 //    fileLists.append(QStringList() << "log0_info.log");
 //    fileLists.append(QStringList() << "f:\\Work\\_Projects\\build-LogView-Desktop_Qt_5_11_0_MinGW_32bit-Debug\\log0_backup.log");
 //    fileLists.append(QStringList() << "f:\\Work\\_Projects\\build-LogView-Desktop_Qt_5_11_0_MinGW_32bit-Debug\\log0_info.log");
 
-    fileLists.append(dialog.GetOpenLogFileNames());
+    OpenFiles(fileLists, QStringList() << dialog.GetEventPatternConfig());
+}
+
+void LogViewMainWindow::slot_act_openMultipleFilesTriggred()
+{
+    LogFilesSelectionDialog dialog(this);
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    const auto& selectedFilesData = dialog.GetLogFilesSelectionData();
+
+    QVector<QStringList> fileLists;
+    QStringList configsList;
+    for (const auto& data : selectedFilesData)
+    {
+        fileLists.append(data.LogFileNames);
+        configsList.append(data.EventPatternConfig);
+    }
+
+    OpenFiles(fileLists, configsList);
+}
+
+void LogViewMainWindow::slot_act_closeFileTriggred()
+{
+    CloseFiles();
+}
+
+void LogViewMainWindow::Invalidate()
+{
+    UpdateViewportParams();
+    Redraw();
+}
+
+void LogViewMainWindow::OpenFiles(const QVector<QStringList> &fileLists, const QStringList &configFiles)
+{
+    CloseFiles();
 
     for (int i = 0; i < fileLists.size(); ++i)
     {
-        LoadLogs(fileLists[i], fileLists.size(), eventsParsingConfigJson);
+        const QString eventsParsingConfigJson = LoadFileToQString(configFiles.at(i));
+        LoadLogs(fileLists.at(i), fileLists.size(), eventsParsingConfigJson);
     }
 
     LineNumber maxLinesCount = 0;
@@ -685,17 +723,6 @@ void LogViewMainWindow::slot_act_openFileTriggred()
     }
 
     Invalidate();
-}
-
-void LogViewMainWindow::slot_act_closeFileTriggred()
-{
-    CloseFiles();
-}
-
-void LogViewMainWindow::Invalidate()
-{
-    UpdateViewportParams();
-    Redraw();
 }
 
 void LogViewMainWindow::CloseFiles()
@@ -810,6 +837,9 @@ void LogViewMainWindow::CreateActions()
     act_openFile = new QAction(tr("&Open log file"));
     act_openFile->setShortcut(QKeySequence("Ctrl+O"));
 
+    act_openMultipleFiles = new QAction(tr("&Open multiple log files"));
+    act_openMultipleFiles->setShortcut(QKeySequence("Ctrl+Shift+O"));
+
     act_exit = new QAction(tr("&Exit"));
 //    act_exit->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_F4));
 
@@ -831,6 +861,7 @@ void LogViewMainWindow::CreateMenuBar()
 
     QMenu* fileMenu = new QMenu(tr("&File"));
     fileMenu->addAction(act_openFile);
+    fileMenu->addAction(act_openMultipleFiles);
     fileMenu->addAction(act_closeFile);
     fileMenu->addSeparator();
     fileMenu->addAction(act_exit);
@@ -853,6 +884,8 @@ void LogViewMainWindow::CreateConnections()
 {
     connect(act_openFile, SIGNAL(triggered()),
             this, SLOT(slot_act_openFileTriggred()), Qt::DirectConnection);
+    connect(act_openMultipleFiles, SIGNAL(triggered()),
+            this, SLOT(slot_act_openMultipleFilesTriggred()), Qt::DirectConnection);
     connect(act_closeFile, SIGNAL(triggered()),
             this, SLOT(slot_act_closeFileTriggred()), Qt::DirectConnection);
     connect(act_exit, SIGNAL(triggered()),

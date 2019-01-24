@@ -16,8 +16,7 @@ public:
     QString GetEventPatternConfig();
 
 private:
-    QStringList m_LogFileName;
-    QString m_HeaderParsingConfig;
+    QStringList m_LogFileNames;
     QString m_EventPatternConfig;
 
     RecentFilesWidget* gui_RecentEventPatternConfigWidget;
