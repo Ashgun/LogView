@@ -784,8 +784,6 @@ void LogViewMainWindow::AddView(const int fileGroupsCount)
     connect(eventsGraphicsView, SIGNAL(LineViewed(int)),
             this, SLOT(slot_LineViewed(int)),
             Qt::QueuedConnection);
-
-    Invalidate();
 }
 
 void LogViewMainWindow::resizeEvent(QResizeEvent* /*event*/)

@@ -12,6 +12,8 @@ LogLineHeaderParsingParamsEditWidget::LogLineHeaderParsingParamsEditWidget(QWidg
 LogLineHeaderParsingParamsEditWidget::LogLineHeaderParsingParamsEditWidget(const LogLineHeaderParsingParams& params, QWidget* parent) :
     QWidget(parent)
 {
+    setMinimumWidth(600);
+
     QHBoxLayout* groupingElementLayout = new QHBoxLayout();
     gui_groupingHeaderCombo = new QComboBox();
     groupingElementLayout->addWidget(new QLabel(tr("Header for grouping:")));
