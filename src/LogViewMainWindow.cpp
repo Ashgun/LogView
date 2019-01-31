@@ -282,12 +282,12 @@ LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
     verticalSplitter->setCollapsible(1, true);
 
     setCentralWidget(verticalSplitter);
-//    QList<int> sizes;
-//    sizes.append(height() * 3/4);
-//    sizes.append(height() - height() * 3/4);
-//    verticalSplitter->setSizes(sizes);
-    verticalSplitter->setStretchFactor(0, 5);
-    verticalSplitter->setStretchFactor(1, 1);
+    QList<int> sizes;
+    sizes.append(height() * 3/4);
+    sizes.append(height() - height() * 3/4);
+    verticalSplitter->setSizes(sizes);
+//    verticalSplitter->setStretchFactor(0, 5);
+//    verticalSplitter->setStretchFactor(1, 1);
 
     CreateActions();
     CreateMenuBar();
