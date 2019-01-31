@@ -273,7 +273,7 @@ LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
     QWidget* selectedViewWidget = new QWidget();
     {
         QVBoxLayout* viewLayout = new QVBoxLayout();
-        viewLayout->addWidget(new QLabel(tr("Selected event:")));
+        viewLayout->addWidget(new QLabel(tr("Selected events log lines:")));
         viewLayout->addWidget(gui_selectedEventView);
 
         selectedViewWidget->setLayout(viewLayout);
