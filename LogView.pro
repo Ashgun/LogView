@@ -3,7 +3,7 @@ TARGET = LogView
 greaterThan(QT_MAJOR_VERSION, 4): QT += core gui widgets
 
 CONFIG += c++14
-CONFIG += console
+CONFIG -= console
 CONFIG -= app_bundle
 
 # The following define makes your compiler emit warnings if you use
