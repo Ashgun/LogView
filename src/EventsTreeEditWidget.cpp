@@ -33,6 +33,10 @@ EventsTreeEditWidget::EventsTreeEditWidget(
     gui_eventsTree = new EventsTreeWidget();
     gui_eventsTree->setHeaderLabels(QStringList() << tr("Event patterns"));
     gui_addEventPatternButton = new QPushButton(tr("Add event pattern"));
+    gui_addTopLevelEventPatternButton =
+            m_patternAddingPolicy != PatternAddingPolicy::AddToTopLevelOnly ?
+                new QPushButton(tr("Add top level event pattern")) :
+                nullptr;
     gui_deleteEventPatternButton = new QPushButton(tr("Delete event pattern"));
     gui_deleteEventPatternButton->setEnabled(false);
 
@@ -42,6 +46,7 @@ EventsTreeEditWidget::EventsTreeEditWidget(
     {
         QHBoxLayout* buttonBox = new QHBoxLayout;
         buttonBox->addWidget(gui_addEventPatternButton);
+        if (gui_addTopLevelEventPatternButton != nullptr) { buttonBox->addWidget(gui_addTopLevelEventPatternButton); }
         buttonBox->addWidget(gui_deleteEventPatternButton);
         treeEditBox->addLayout(buttonBox);
     }
@@ -59,6 +64,13 @@ EventsTreeEditWidget::EventsTreeEditWidget(
             this, SLOT(slot_addEventPatternButton_clicked(bool)), Qt::DirectConnection);
     connect(gui_deleteEventPatternButton, SIGNAL(clicked(bool)),
             this, SLOT(slot_deleteEventPatternButton_clicked(bool)), Qt::DirectConnection);
+
+    if (gui_addTopLevelEventPatternButton != nullptr)
+    {
+        connect(gui_addTopLevelEventPatternButton, SIGNAL(clicked(bool)),
+                this, SLOT(slot_addTopLevelEventPatternButton_clicked(bool)),
+                Qt::DirectConnection);
+    }
 }
 
 std::map<QTreeWidgetItem*, IMatchableEventPatternPtr>& EventsTreeEditWidget::GetItemsMap()
@@ -151,6 +163,21 @@ void EventsTreeEditWidget::slot_addEventPatternButton_clicked(bool)
     {
         item = new QTreeWidgetItem(currentItem, QStringList() << eventPattern->Name);
     }
+
+    m_mapTreeItemsToEventPatterns[item] = std::move(eventPattern);
+    gui_eventsTree->expandAll();
+    gui_eventsTree->setCurrentItem(item);
+}
+
+void EventsTreeEditWidget::slot_addTopLevelEventPatternButton_clicked(bool)
+{
+    AcceptState();
+
+    const QString baseEventPatternName = "New event pattern";
+    IMatchableEventPatternPtr eventPattern = CreateDefaultEventPattern(baseEventPatternName);
+
+    QTreeWidgetItem* item = new QTreeWidgetItem(QStringList() << eventPattern->Name);
+    gui_eventsTree->addTopLevelItem(item);
 
     m_mapTreeItemsToEventPatterns[item] = std::move(eventPattern);
     gui_eventsTree->expandAll();

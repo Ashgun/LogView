@@ -53,6 +53,7 @@ public slots:
     void slot_eventsTree_clicked();
     void slot_eventsTree_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
     void slot_addEventPatternButton_clicked(bool);
+    void slot_addTopLevelEventPatternButton_clicked(bool);
     void slot_deleteEventPatternButton_clicked(bool);
 
 private:
@@ -62,6 +63,7 @@ private:
     EventPatternEditWidget* gui_eventsEdit;
 
     QPushButton* gui_addEventPatternButton;
+    QPushButton* gui_addTopLevelEventPatternButton;
     QPushButton* gui_deleteEventPatternButton;
 
     std::map<QTreeWidgetItem*, IMatchableEventPatternPtr> m_mapTreeItemsToEventPatterns;
