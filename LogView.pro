@@ -92,3 +92,6 @@ HEADERS += \
     src/EventPatternsEditWidget.h \
     src/LogFilesSelectionWidget.h \
     src/LogFilesSelectionDialog.h
+
+RESOURCES += \
+    src/Images.qrc
