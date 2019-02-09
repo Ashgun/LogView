@@ -252,7 +252,7 @@ LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
 {
     qRegisterMetaType<Event>("Event");
     setMinimumSize(1024, 768);
-    setWindowIcon(QIcon(":/Images/logo.png"));
+    setWindowIcon(QIcon(":/images/Images/logo.png"));
 
     gui_selectedEventView = new QTreeWidget();
 //    gui_selectedEventView->setColumnCount(2);
