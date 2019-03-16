@@ -662,7 +662,7 @@ void LogViewMainWindow::OpenFiles(const QVector<QStringList> &fileLists, const Q
     std::vector<std::size_t> currentPositions(m_linesStorages.size(), 0);
     LogLineComparator logLineComparator(m_logLineHeaderParsingParams);
     LineNumber globalIndex = 0;
-    for (LineNumber ind = 0; ind < maxLinesCount; ++ind)
+    for (LineNumber ind = 0; ind <= maxLinesCount; ++ind)
     {
         QString minLine = "";
 
