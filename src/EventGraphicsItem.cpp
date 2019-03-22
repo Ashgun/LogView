@@ -87,7 +87,7 @@ void EventGraphicsItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*
 
     painter->setPen(QPen(Qt::black, 1));
     painter->setBrush(QBrush(Qt::white));
-    const QRectF namePlaceRect(currentRect.x() + ItemViewParams::xSpace, currentRect.y() - ItemViewParams::ySpace,
+    const QRectF namePlaceRect(currentRect.x() + ItemViewParams::xSpace, currentRect.y() - ItemViewParams::ySpace + 0.75 * ItemViewParams::ySpace,
                                currentRect.width() - 2 * ItemViewParams::xSpace, 2 * ItemViewParams::ySpace);
     painter->drawRect(namePlaceRect);
 
