@@ -293,6 +293,8 @@ LogViewMainWindow::LogViewMainWindow(QWidget *parent) :
     CreateActions();
     CreateMenuBar();
     CreateConnections();
+
+    act_reloadFiles->setEnabled(false);
 }
 
 LogViewMainWindow::~LogViewMainWindow() = default;
@@ -626,6 +628,11 @@ void LogViewMainWindow::slot_act_openMultipleFilesTriggred()
     OpenFiles(fileLists, configsList);
 }
 
+void LogViewMainWindow::slot_act_reloadFilesTriggred()
+{
+    OpenFiles(QVector<QStringList>(m_actualFileLists), QStringList(m_actualConfigFiles));
+}
+
 void LogViewMainWindow::slot_act_closeFileTriggred()
 {
     CloseFiles();
@@ -640,6 +647,9 @@ void LogViewMainWindow::Invalidate()
 void LogViewMainWindow::OpenFiles(const QVector<QStringList> &fileLists, const QStringList &configFiles)
 {
     CloseFiles();
+
+    m_actualFileLists = fileLists;
+    m_actualConfigFiles = configFiles;
 
     for (int i = 0; i < fileLists.size(); ++i)
     {
@@ -719,10 +729,14 @@ void LogViewMainWindow::OpenFiles(const QVector<QStringList> &fileLists, const Q
     }
 
     Invalidate();
+
+    act_reloadFiles->setEnabled(true);
 }
 
 void LogViewMainWindow::CloseFiles()
 {
+    act_reloadFiles->setEnabled(false);
+
     gui_selectedEventView->clear();
 
     for (std::size_t i = 0; i < gui_EventsViews.size(); ++i)
@@ -757,6 +771,9 @@ void LogViewMainWindow::CloseFiles()
     m_linesStorages.clear();
     m_eventLevels.clear();
     m_loadedFiles.clear();
+
+    m_actualFileLists.clear();
+    m_actualConfigFiles.clear();
 }
 
 void LogViewMainWindow::AddView(const int fileGroupsCount)
@@ -831,8 +848,11 @@ void LogViewMainWindow::CreateActions()
     act_openFile = new QAction(tr("&Open log file"));
     act_openFile->setShortcut(QKeySequence("Ctrl+O"));
 
-    act_openMultipleFiles = new QAction(tr("&Open multiple log files"));
+    act_openMultipleFiles = new QAction(tr("Open &multiple log files"));
     act_openMultipleFiles->setShortcut(QKeySequence("Ctrl+Shift+O"));
+
+    act_reloadFiles = new QAction(tr("&Reload file(s)"));
+    act_reloadFiles->setShortcut(QKeySequence("Ctrl+R"));
 
     act_exit = new QAction(tr("&Exit"));
 //    act_exit->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_F4));
@@ -856,6 +876,8 @@ void LogViewMainWindow::CreateMenuBar()
     QMenu* fileMenu = new QMenu(tr("&File"));
     fileMenu->addAction(act_openFile);
     fileMenu->addAction(act_openMultipleFiles);
+    fileMenu->addSeparator();
+    fileMenu->addAction(act_reloadFiles);
     fileMenu->addAction(act_closeFile);
     fileMenu->addSeparator();
     fileMenu->addAction(act_exit);
@@ -880,6 +902,8 @@ void LogViewMainWindow::CreateConnections()
             this, SLOT(slot_act_openFileTriggred()), Qt::DirectConnection);
     connect(act_openMultipleFiles, SIGNAL(triggered()),
             this, SLOT(slot_act_openMultipleFilesTriggred()), Qt::DirectConnection);
+    connect(act_reloadFiles, SIGNAL(triggered()),
+            this, SLOT(slot_act_reloadFilesTriggred()), Qt::DirectConnection);
     connect(act_closeFile, SIGNAL(triggered()),
             this, SLOT(slot_act_closeFileTriggred()), Qt::DirectConnection);
     connect(act_exit, SIGNAL(triggered()),

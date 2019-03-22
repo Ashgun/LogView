@@ -37,6 +37,7 @@ protected slots:
     void slot_LineViewed(int hPos);
     void slot_act_openFileTriggred();
     void slot_act_openMultipleFilesTriggred();
+    void slot_act_reloadFilesTriggred();
     void slot_act_closeFileTriggred();
     void slot_act_copySelectedLinesToClipboard_Triggred();
     void slot_act_editEventPatternsConfig_Triggred();
@@ -75,6 +76,7 @@ private:
     QAction* act_openFile;
     QAction* act_openMultipleFiles;
     QAction* act_closeFile;
+    QAction* act_reloadFiles;
     QAction* act_copySelectedLinesToClipboard;
     QShortcut* shortcut_copySelectedLinesToClipboard;
     QAction* act_editEventPatternsConfig;
@@ -88,6 +90,9 @@ private:
     std::unique_ptr<IEventInfoExtractor> m_infoExtractor;
 
     LogLineHeaderParsingParams m_logLineHeaderParsingParams;
+
+    QVector<QStringList> m_actualFileLists;
+    QStringList m_actualConfigFiles;
 };
 
 #endif // LOGVIEWMAINWINDOW_H
